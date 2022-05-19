@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import torchvision.transforms
 from torch.utils.data import DataLoader
 
+import libnn.transform
 from utils import *
 from libnn.model import weights_init, wgans
 from libnn.model.wgans import gradient_penalty
@@ -18,7 +19,7 @@ from utils.logger import LoggerGroup, Reporter
 # CONFIG section
 ngpu = 1
 
-dev = "cpu"
+dev = "cuda"
 EPOCHS = 10000
 load_at_epoch = 0
 LR = 1e-4
@@ -51,7 +52,7 @@ torch.manual_seed(manualSeed)
 # ----Dataset declaration----
 img_tf = nn.Sequential(
     torchvision.transforms.Resize((64, 64)),
-    torchvision.transforms.Normalize(mean=0, std=1)
+    libnn.transform.TanhRescale(min=0, max=255, padding=0.01)
 )
 
 ds = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf).to(dev)
@@ -93,7 +94,7 @@ def j1_loss(l1, l2, f1, f2):
 
 # - WGANs section
 num_classes = ds.get_num_classes()
-netD = wgans.Discriminator(ngpu=1, num_classes=num_classes, latent_size=200, img_channel=1)
+netD = wgans.Discriminator(ngpu=1, num_classes=num_classes, latent_size=200, img_channel=1).to(dev)
 netG = wgans.Generator(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
 
 if (dev == 'cuda') and (ngpu > 1):

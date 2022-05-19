@@ -51,7 +51,7 @@ class fMRI_HC_Dataset(Dataset):
         if self.img_tf is not None:
             img = self.img_tf(img)
         label = self.dat['l'][idx]
-        return fmri, img, label
+        return fmri.to(self.__dev), img.to(self.__dev), label.to(self.__dev)
 
     @staticmethod
     def get_name():
