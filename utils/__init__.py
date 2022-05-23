@@ -4,6 +4,7 @@ import random
 import pathlib
 import numpy as np
 import torch
+import torch.nn as nn
 
 from torchvision.utils import make_grid, save_image
 from itertools import combinations
@@ -109,3 +110,8 @@ def mkdir(path_str):
 def save_model(model_param, path, filename):
     full_path = os.path.join(path, filename)
     torch.save(model_param.state_dict(), full_path)
+
+
+def model_size_mb(nn_model: nn.Module):
+    s = sum(np.prod(v.size()) for name, v in nn_model.named_parameters()) / 1e6
+    return s.item()

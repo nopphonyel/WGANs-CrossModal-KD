@@ -1,0 +1,44 @@
+CrossModal ResNet18 no l3,4
+--------------------------------
+This experiment using FE that based on ResNet18 but remove layer 3 and 4 due to over-fitting.
+Dropout also used in this FE and hope that it would be more generalize.
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-80.37
+	> max:-15.84
+	> last:-78.25
+j1
+	> min:-80.37
+	> max:-20.37
+	> last:-78.25
+j2
+	> min:0.00
+	> max:1.87
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.66
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:15.20
+	> max:46.45
+	> last:39.89
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:95.83
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-131.70
+	> max:-23.45
+	> last:-31.62
+g_loss
+	> min:67.60
+	> max:162.76
+	> last:162.76
+}

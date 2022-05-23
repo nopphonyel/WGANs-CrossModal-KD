@@ -63,7 +63,7 @@ ld_val = DataLoader(ds_val, batch_size=len(ds_val), shuffle=True)
 
 # ----Model declaration----
 # - Classifier|Extractor section
-non_img_extr = ResNet18Extractor(in_features=948, out_features=200, num_classes=6, dropout_p=0.2).to(dev)
+non_img_extr = ResNet18Extractor(in_features=948, out_features=200, num_classes=6).to(dev)
 img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False).to(dev)
 
 nimg_optim = torch.optim.Adam(non_img_extr.parameters(), lr=LR)
@@ -120,10 +120,9 @@ acc_logger = LoggerGroup("Accuracy")
 wgan_logger = LoggerGroup("WGANs")
 
 reporter = Reporter(loss_logger, acc_logger, wgan_logger)
-reporter.set_experiment_name("CrossModal ResNet18 no l3,4")
+reporter.set_experiment_name("CrossModal ResNet18 no l3,4 no Dropout")
 reporter.append_summary_description(
     "This experiment using FE that based on ResNet18 but remove layer 3 and 4 due to over-fitting.")
-reporter.append_summary_description("Dropout also used in this FE and hope that it would be more generalize.")
 
 if not reporter.review():
     quit()

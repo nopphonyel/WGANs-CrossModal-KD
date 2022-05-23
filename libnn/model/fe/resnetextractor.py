@@ -42,8 +42,9 @@ class ResNet18Extractor(nn.Module):
     This extractor model based on ResNet18
     """
 
-    def __init__(self, in_features, out_features, num_classes):
+    def __init__(self, in_features, out_features, num_classes, dropout_p=0.0):
         super(ResNet18Extractor, self).__init__()
+        dp = dropout_p
 
         self.shaper = nn.Sequential(
             nn.Linear(in_features, 1600),
@@ -63,14 +64,16 @@ class ResNet18Extractor(nn.Module):
         self.l1 = nn.Sequential(
             ResBlock(64, 64, False),
             ResBlock(64, 64, False),
-            ResBlock(64, 64, False)
+            ResBlock(64, 64, False),
+            nn.Dropout2d(p=dp)
         )
 
         self.l2 = nn.Sequential(
             ResBlock(64, 128, True),
             ResBlock(128, 128, False),
             ResBlock(128, 128, False),
-            ResBlock(128, 128, False)
+            ResBlock(128, 128, False),
+            nn.Dropout2d(p=dp)
         )
 
         self.l3 = nn.Sequential(
@@ -79,19 +82,21 @@ class ResNet18Extractor(nn.Module):
             ResBlock(256, 256, False),
             ResBlock(256, 256, False),
             ResBlock(256, 256, False),
-            ResBlock(256, 256, False)
+            ResBlock(256, 256, False),
+            nn.Dropout2d(p=dp)
         )
 
         self.l4 = nn.Sequential(
             ResBlock(256, 512, True),
             ResBlock(512, 512, False),
             ResBlock(512, 512, False),
+            nn.Dropout2d(p=dp)
         )
 
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
-            nn.Linear(512, out_features),
+            nn.Linear(128, out_features),
             nn.ReLU()
         )
         self.final_fc = nn.Linear(out_features, num_classes)
@@ -101,8 +106,8 @@ class ResNet18Extractor(nn.Module):
         x = self.l0(x)
         x = self.l1(x)
         x = self.l2(x)
-        x = self.l3(x)
-        x = self.l4(x)
+        # x = self.l3(x)
+        # x = self.l4(x)
         x = self.gap(x)
         x = torch.flatten(x, start_dim=1)
         latent = self.fc(x)

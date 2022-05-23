@@ -33,8 +33,8 @@ lambda_gp = 10
 d_epoch_steps = 5
 g_epoch_steps = 1
 
-preview_gen_num = 5
-export_gen_img_every = 8
+preview_gen_num = 20
+export_gen_img_every = 20
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
@@ -121,108 +121,120 @@ wgan_logger = LoggerGroup("WGANs")
 
 reporter = Reporter(loss_logger, acc_logger, wgan_logger)
 
-for e in range(EPOCHS):
-    # Train session
-    for i, (fmri, img, label_idx) in enumerate(ld):
-        curr_bs = fmri.shape[0]
+reporter.set_experiment_name("CrossModal Full ResNet18, no dropout")
+reporter.append_summary_description("Using fMRI-FE that based on ResNet18.")
+reporter.append_summary_description("\nfMRI size = %f MB" % model_size_mb(non_img_extr))
+reporter.append_summary_description("\nGenerator size = %f MB" % model_size_mb(netG))
 
-        l_p = F.one_hot(label_idx, num_classes=6).float()
-        fy_p, ly_p = non_img_extr(fmri)
-        fx_p, lx_p = img_extr(img)
+# Show the experiment details and description before run the training script
+if not reporter.review():
+    quit()
 
-        j1 = j1_loss(l_p, l_p, fy_p, fx_p)
-        j2 = criterion(ly_p, label_idx)
-        j3 = criterion(lx_p, label_idx)
+try:
+    for e in range(EPOCHS):
+        # Train session
+        for i, (fmri, img, label_idx) in enumerate(ld):
+            curr_bs = fmri.shape[0]
 
-        loss = j1 + j2 + j3
-
-        nimg_optim.zero_grad()
-        img_optim.zero_grad()
-        loss.backward()
-        nimg_optim.step()
-        img_optim.step()
-
-        # Report
-        loss_logger.collect_step('total', loss.item())
-        loss_logger.collect_step('j1', j1.item())
-        loss_logger.collect_step('j2', j2.item())
-        loss_logger.collect_step('j3', j3.item())
-
-        # Train netD
-        for _ in range(d_epoch_steps):
+            l_p = F.one_hot(label_idx, num_classes=6).float()
             fy_p, ly_p = non_img_extr(fmri)
-            ly_p_idx = torch.argmax(ly_p, dim=1)
+            fx_p, lx_p = img_extr(img)
 
-            zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
-            ld_real = netD(img, ly_p_idx, fy_p).view(-1)
-            fake_img = netG(zz, ly_p_idx, fy_p)
-            ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
+            j1 = j1_loss(l_p, l_p, fy_p, fx_p)
+            j2 = criterion(ly_p, label_idx)
+            j3 = criterion(lx_p, label_idx)
 
-            gp = gradient_penalty(netD, fy_p, ly_p_idx, img, fake_img, dev)
-            d_loss = -(torch.mean(ld_real) - torch.mean(ld_fake)) + lambda_gp * gp
-            wgan_logger.collect_sub_step('d_loss', d_loss.item())
+            loss = j1 + j2 + j3
 
-            d_optim.zero_grad()
-            d_loss.backward(retain_graph=True)
-            d_optim.step()
+            nimg_optim.zero_grad()
+            img_optim.zero_grad()
+            loss.backward()
+            nimg_optim.step()
+            img_optim.step()
 
-        # Train netG
-        for _ in range(g_epoch_steps):
-            fy_p, ly_p = non_img_extr(fmri)
-            ly_p_idx = torch.argmax(ly_p, dim=1)
+            # Report
+            loss_logger.collect_step('total', loss.item())
+            loss_logger.collect_step('j1', j1.item())
+            loss_logger.collect_step('j2', j2.item())
+            loss_logger.collect_step('j3', j3.item())
 
-            zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
-            fake_img = netG(zz, ly_p_idx, fy_p)
-            ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
+            # Train netD
+            for _ in range(d_epoch_steps):
+                fy_p, ly_p = non_img_extr(fmri)
+                ly_p_idx = torch.argmax(ly_p, dim=1)
 
-            g_loss = -torch.mean(ld_fake)
-
-            # Test back prop again... in hope that discriminator also improve the non-img
-            g_optim.zero_grad()
-            # nimg_optim.zero_grad()
-            g_loss.backward(retain_graph=True)
-            g_optim.step()
-            # nimg_optim.step()
-
-            wgan_logger.collect_sub_step('g_loss', g_loss.item())
-        wgan_logger.flush_sub_step_all()
-
-        # Validate stuff
-        for fmri_val, img_val, label_idx_val in ld_val:
-            non_img_extr.eval()
-            img_extr.eval()
-
-            fy_p, ly_p = non_img_extr(fmri_val)
-            _, lx_p = img_extr(img_val)
-            ly_p_idx = torch.argmax(ly_p, dim=1)
-            lx_p_idx = torch.argmax(lx_p, dim=1)
-            j2_acc = torch.sum(ly_p_idx == label_idx_val) / label_idx_val.shape[0]
-            j3_acc = torch.sum(lx_p_idx == label_idx_val) / label_idx_val.shape[0]
-
-            # Only export image when end of 'export_gen_img_every'th epoch
-            if i == 0 and (e + 1) % export_gen_img_every == 0:
-                zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
-                fy_p = fy_p[0:preview_gen_num, :]
-                ly_p_idx = ly_p_idx[0:preview_gen_num]
+                zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
+                ld_real = netD(img, ly_p_idx, fy_p).view(-1)
                 fake_img = netG(zz, ly_p_idx, fy_p)
+                ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
 
-                real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
-                fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
-                img_grid = torch.cat((real_img, fake_img), 1)
-                save_image(img_grid, IMAGE_PATH + "epoch_{}.png".format(e), normalize=False)
+                gp = gradient_penalty(netD, fy_p, ly_p_idx, img, fake_img, dev)
+                d_loss = -(torch.mean(ld_real) - torch.mean(ld_fake)) + lambda_gp * gp
+                wgan_logger.collect_sub_step('d_loss', d_loss.item())
 
-            acc_logger.collect_step('j2_acc', j2_acc.item() * 100)
-            acc_logger.collect_step('j3_acc', j3_acc.item() * 100)
+                d_optim.zero_grad()
+                d_loss.backward(retain_graph=True)
+                d_optim.step()
 
-        non_img_extr.train()
-        img_extr.train()
+            # Train netG
+            for _ in range(g_epoch_steps):
+                fy_p, ly_p = non_img_extr(fmri)
+                ly_p_idx = torch.argmax(ly_p, dim=1)
 
-        reporter.report(epch=e + 1, b_i=i, b_all=len(ld) - 1)
+                zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
+                fake_img = netG(zz, ly_p_idx, fy_p)
+                ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
 
-    loss_logger.flush_step_all()
-    acc_logger.flush_step_all()
-    wgan_logger.flush_step_all()
+                g_loss = -torch.mean(ld_fake)
 
-reporter.stop()
-loss_logger.plot_all()
-acc_logger.plot_all()
+                # Test back prop again... in hope that discriminator also improve the non-img
+                g_optim.zero_grad()
+                # nimg_optim.zero_grad()
+                g_loss.backward(retain_graph=True)
+                g_optim.step()
+                # nimg_optim.step()
+
+                wgan_logger.collect_sub_step('g_loss', g_loss.item())
+            wgan_logger.flush_sub_step_all()
+
+            # Validate stuff
+            for fmri_val, img_val, label_idx_val in ld_val:
+                non_img_extr.eval()
+                img_extr.eval()
+
+                fy_p, ly_p = non_img_extr(fmri_val)
+                _, lx_p = img_extr(img_val)
+                ly_p_idx = torch.argmax(ly_p, dim=1)
+                lx_p_idx = torch.argmax(lx_p, dim=1)
+                j2_acc = torch.sum(ly_p_idx == label_idx_val) / label_idx_val.shape[0]
+                j3_acc = torch.sum(lx_p_idx == label_idx_val) / label_idx_val.shape[0]
+
+                # Only export image when end of 'export_gen_img_every'th epoch
+                if i == 0 and (e + 1) % export_gen_img_every == 0:
+                    zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
+                    fy_p = fy_p[0:preview_gen_num, :]
+                    ly_p_idx = ly_p_idx[0:preview_gen_num]
+                    fake_img = netG(zz, ly_p_idx, fy_p)
+
+                    real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
+                    fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
+                    img_grid = torch.cat((real_img, fake_img), 1)
+                    save_image(img_grid, IMAGE_PATH + "epoch_{}.png".format(e), normalize=False)
+
+                acc_logger.collect_step('j2_acc', j2_acc.item() * 100)
+                acc_logger.collect_step('j3_acc', j3_acc.item() * 100)
+
+            non_img_extr.train()
+            img_extr.train()
+
+            reporter.report(epch=e + 1, b_i=i, b_all=len(ld) - 1)
+
+        loss_logger.flush_step_all()
+        acc_logger.flush_step_all()
+        wgan_logger.flush_step_all()
+
+    loss_logger.report()
+    acc_logger.report()
+finally:
+    reporter.stop()
+    reporter.write_summary(os.path.dirname(__file__))

@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pickle
 from typing import List
@@ -75,70 +77,89 @@ class LoggerGroup:
             self.add_var(key)
         self.__dict[key]['epchs'].append(value)
 
-    def plot_all(
+    def report(
             self,
             show_fig=True,
             save_fig=False,
             save_details_txt=False,
-            enable_log_scaled=False
+            log_scale=False
     ):
         """
-        This method will plot all the available log variable in this class
+        This method will report all the available log variable
         :param show_fig: set to show figure
         :param save_fig: set to save all figure
         :param save_details_txt: set to save additional details in text file
-        :param enable_log_scaled: set to save a plot figure in a log scale
-        :return:
+        :param log_scale: set to save a plot figure in a log scale
         """
+        key_list = list(self.__dict.keys())
+        self.plot(key_list, log_scale, save_fig, show_fig, full_hist=False, show_legend=True)
+        self.plot(key_list, log_scale, save_fig, show_fig, full_hist=True, show_legend=True)
+        if save_details_txt:
+            f = open(self.title + "_details.txt", "w")
+            f.write(self.summary())
+            f.close()
 
-        # Run normal plot
-        for title in [('{} full history'.format(self.title), 'f_hist'),
-                      ('{} epoch history'.format(self.title), 'epchs')]:
-            dtx = ""
-            plt.title(title[0])
-            for e_k in self.__dict.keys():
-                arr = self.__dict[e_k][title[1]]
-                if len(arr) > 0:
-                    plt.plot(arr, label=e_k)
-                    if save_details_txt:
-                        dtx += e_k + "\n\t> min:{:.2f}\n\t> max:{:.2f}\n\t> last:{:.2f}\n".format(min(arr), max(arr),
-                                                                                                  arr[-1])
+    def plot(self,
+             key_list: list,
+             log_scale: bool = False,
+             save_fig: bool = False,
+             show_fig: bool = False,
+             full_hist: bool = False,
+             show_legend: bool = False
+             ):
+        """
+        This function will plot the history of log on the given keys in a single figure.
+        :param key_list The given keys that will use to plot all of those value on a figure
+        :param log_scale Specify to plot in log scale or not
+        :param save_fig Save the figure in to a file
+        :param show_fig Show plotted figure
+        :param full_hist Plot the full history (True) or plot the epochs history (False)
+        :param show_legend Specify to show plot legend or not
+        """
+        hist_mode = 'f_hist' if full_hist else 'epchs'
+        fig_title = self.title + "_" + hist_mode
+        plt.title(fig_title)
+        for e_k in key_list:
+            arr = self.__dict[e_k][hist_mode]
+            if len(arr) > 0:
+                if log_scale:
+                    arr = np.log(np.add(arr, 1))
+                plt.plot(arr, label=e_k)
+        if show_legend:
             plt.legend()
-            if save_fig:
-                plt.savefig("./%s" % (self.title + "-" + title[1]))
-            if show_fig:
-                plt.show()
-            if save_details_txt:
-                f = open(self.title + "_details.txt", "w")
-                f.write(dtx)
-                f.close()
-            plt.clf()
+        if save_fig:
+            f_name = self.title + "-"
+            f_name += 'f_hist' if full_hist else 'epchs'
+            f_name += '_log_scaled' if log_scale else ''
+            plt.savefig("./%s" % f_name)
+        if show_fig:
+            plt.show()
+        plt.clf()
 
-        # Run log scale plot
-        if enable_log_scaled:
-            dtx = ""
-            for title in [('{} full history (log scaled)'.format(self.title), 'f_hist'),
-                          ('{} epoch history (log scaled)'.format(self.title), 'epchs')]:
-                plt.title(title[0])
-                for e_k in self.__dict.keys():
-                    arr = self.__dict[e_k][title[1]]
-                    if len(arr) > 0:
-                        arr = np.log(np.add(arr, 1))
-                        plt.plot(arr, label=e_k)
-                        if save_details_txt:
-                            dtx += e_k + "\n\t> min:{:.2f}\n\t> max:{:.2f}\n\t> last:{:.2f}\n".format(min(arr),
-                                                                                                      max(arr),
-                                                                                                      arr[-1])
-                plt.legend()
-                if save_fig:
-                    plt.savefig("./%s" % (self.title + "-" + title[1] + "_log_scaled"))
-                if show_fig:
-                    plt.show()
-                if save_details_txt:
-                    f = open(self.title + "_details_log_scaled.txt", "w")
-                    f.write(dtx)
-                    f.close()
-                plt.clf()
+    def summary(self, key_list: list = None, log_scale: bool = False, full_hist: bool = False):
+        """
+        This method will return summary string
+        """
+        head = "<===[[ " + self.title + " ]]===> {"
+        dtx = head
+        key_list = list(self.__dict.keys()) if key_list is None else key_list
+        for e_k in key_list:
+            dtx += self.__gen_summary(key=e_k, indent=0, log_scale=log_scale, full_hist=full_hist)
+        return dtx + "\n}"
+
+    def __gen_summary(self, key, indent=0, log_scale: bool = False, full_hist: bool = False):
+        arr = self.__dict[key]['f_hist'] if full_hist else self.__dict[key]['epchs']
+        ind = '\t' * indent
+        if log_scale:
+            arr = np.log(np.add(arr, 1))
+        if len(arr) > 0:
+            mn_v = min(arr)
+            mx_v = max(arr)
+            lst_v = arr[-1]
+            txt = "\n" + ind + "{}\n" + ind + "\t> min:{:.2f}\n" + ind + "\t> max:{:.2f}\n" + ind + "\t> last:{:.2f}"
+            return txt.format(key, mn_v, mx_v, lst_v)
+        else:
+            return ""
 
     def export_file(self, filename: str):
         if ".lggr" not in filename:
@@ -161,7 +182,8 @@ class Reporter:
     def __init__(self, *logger_groups):
         self.l_g: List = list(logger_groups)
         self.line_count = 0  # This variable only use in classic reporter
-        self.__init_stdscr()
+        self.exp_name = "**An Experiment**"
+        self.sum_desc = ""
 
     def __init_stdscr(self):
         try:
@@ -180,6 +202,24 @@ class Reporter:
         else:
             self.__init_stdscr()
         return self
+
+    def review(self):
+        """
+        Review experiment details
+        """
+        try:
+            r_head = "Experiment name: " + self.exp_name
+            r_dash = "-" * (len(r_head) + 4)
+            r_desc = self.sum_desc
+            print(r_head + "\n" + r_dash)
+            print(r_desc + "\n")
+            print("\tPress Enter to start training")
+            input("\tor Ctrl-C to abort...")
+            self.__init_stdscr()
+            return True
+        except KeyboardInterrupt:
+            print("\n<I> : User rejected the experiment.")
+            return False
 
     def append_logger_list(self, l_g_list: List):
         self.l_g += l_g_list
@@ -237,9 +277,44 @@ class Reporter:
                 line_idx += 1
             self.stdscr.refresh()
 
+    def set_experiment_name(self, exp_name):
+        self.exp_name = exp_name
+
+    def set_summary_description(self, txt):
+        self.sum_desc = txt
+
+    def append_summary_description(self, txt):
+        self.sum_desc += txt + " "
+
+    def write_summary(self, path, f_name: str = "summary.txt", log_scale: bool = False, full_hist: bool = False):
+        txt = self.exp_name + "\n" + ("-" * (len(self.exp_name) + 5)) + "\n"
+        txt += self.sum_desc + "\n\nHere are experiment results.\n"
+        for e_lg in self.l_g:
+            txt += e_lg.summary(log_scale=log_scale, full_hist=full_hist) + "\n"
+        f = open(os.path.join(path, f_name), "w")
+        f.write(txt)
+        f.close()
+
     def stop(self):
         if not self.use_classic_report:
-            del self.stdscr
-            curses.echo()
-            curses.nocbreak()
-            curses.endwin()
+            try:
+                del self.stdscr
+                curses.echo()
+                curses.nocbreak()
+                curses.endwin()
+            except AttributeError:
+                print("<I> : Training script was done while screen not active.")
+
+
+if __name__ == '__main__':
+    a = LoggerGroup("Untitled")
+    b = LoggerGroup("Untitled2")
+    r = Reporter(a, b)
+    for i in range(16):
+        a.collect_epch('D_slope', i * 0.57)
+        a.collect_epch('Q_slope', i)
+        b.collect_epch('Anti_Q', (i ** 1.4) * (-0.86))
+        b.collect_epch('Anti_M', (i ** 1.4) - i * (-0.86))
+    r.write_summary('./', False, False)
+    a.report(show_fig=True)
+    b.plot(key_list=['Anti_Q'], show_fig=True, show_legend=True)
