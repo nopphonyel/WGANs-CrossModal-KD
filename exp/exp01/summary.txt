@@ -1,0 +1,43 @@
+CrossModal Full ResNet18, no dropout
+-----------------------------------------
+Using fMRI-FE that based on ResNet18 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-73.71
+	> max:-0.12
+	> last:-72.08
+j1
+	> min:-73.71
+	> max:-3.90
+	> last:-72.08
+j2
+	> min:0.00
+	> max:2.32
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.02
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:12.58
+	> max:62.50
+	> last:56.94
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:98.61
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-141.39
+	> max:-22.94
+	> last:-28.03
+g_loss
+	> min:64.39
+	> max:507.26
+	> last:505.73
+}
