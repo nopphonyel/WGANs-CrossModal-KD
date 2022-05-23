@@ -306,15 +306,15 @@ class Reporter:
                 print("<I> : Training script was done while screen not active.")
 
 
-if __name__ == '__main__':
-    a = LoggerGroup("Untitled")
-    b = LoggerGroup("Untitled2")
-    r = Reporter(a, b)
-    for i in range(16):
-        a.collect_epch('D_slope', i * 0.57)
-        a.collect_epch('Q_slope', i)
-        b.collect_epch('Anti_Q', (i ** 1.4) * (-0.86))
-        b.collect_epch('Anti_M', (i ** 1.4) - i * (-0.86))
-    r.write_summary('./', False, False)
-    a.report(show_fig=True)
-    b.plot(key_list=['Anti_Q'], show_fig=True, show_legend=True)
+# if __name__ == '__main__':
+#     a = LoggerGroup("Untitled")
+#     b = LoggerGroup("Untitled2")
+#     r = Reporter(a, b)
+#     for i in range(16):
+#         a.collect_epch('D_slope', i * 0.57)
+#         a.collect_epch('Q_slope', i)
+#         b.collect_epch('Anti_Q', (i ** 1.4) * (-0.86))
+#         b.collect_epch('Anti_M', (i ** 1.4) - i * (-0.86))
+#     r.write_summary('./', False, False)
+#     a.report(show_fig=True)
+#     b.plot(key_list=['Anti_Q'], show_fig=True, show_legend=True)
