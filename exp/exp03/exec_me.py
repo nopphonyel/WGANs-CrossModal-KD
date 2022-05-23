@@ -63,7 +63,7 @@ ld_val = DataLoader(ds_val, batch_size=len(ds_val), shuffle=True)
 
 # ----Model declaration----
 # - Classifier|Extractor section
-non_img_extr = ResNet18Extractor(in_features=948, out_features=200, num_classes=6).to(dev)
+non_img_extr = ShallowResNet18Extractor(in_features=948, out_features=200, num_classes=6).to(dev)
 img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False).to(dev)
 
 nimg_optim = torch.optim.Adam(non_img_extr.parameters(), lr=LR)
