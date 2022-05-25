@@ -88,7 +88,7 @@ class ResNet18Extractor(nn.Module):
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
-            nn.Linear(128, out_features),
+            nn.Linear(512, out_features),
             nn.ReLU()
         )
         self.final_fc = nn.Linear(out_features, num_classes)

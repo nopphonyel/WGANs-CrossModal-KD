@@ -1,0 +1,43 @@
+CrossModal fMRI extractor Full-ResNet34
+--------------------------------------------
+Using fMRI extractor as Full-ResNet34, no dropout is used. I just want to see the performance of ResNet34. 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-76.17
+	> max:-24.76
+	> last:-72.93
+j1
+	> min:-76.17
+	> max:-29.34
+	> last:-72.93
+j2
+	> min:0.00
+	> max:1.87
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.71
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:16.05
+	> max:47.76
+	> last:37.11
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:100.00
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-93.70
+	> max:-10.71
+	> last:-14.29
+g_loss
+	> min:57.71
+	> max:426.47
+	> last:411.95
+}
