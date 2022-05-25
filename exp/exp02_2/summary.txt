@@ -1,0 +1,11 @@
+CrossModal Shallow ResNet34 (no l3,4) no Dropout
+-----------------------------------------------------
+This experiment using FE that based on ResNet34 but remove layer 3 and 4 due to over-fitting. 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+}
+<===[[ Accuracy ]]===> {
+}
+<===[[ WGANs ]]===> {
+}

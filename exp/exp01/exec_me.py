@@ -121,8 +121,8 @@ wgan_logger = LoggerGroup("WGANs")
 
 reporter = Reporter(loss_logger, acc_logger, wgan_logger)
 
-reporter.set_experiment_name("CrossModal Full ResNet18, no dropout")
-reporter.append_summary_description("Using fMRI-FE that based on ResNet18.")
+reporter.set_experiment_name("CrossModal SimpleFC")
+reporter.append_summary_description("Using fMRI-FE that based on SimpleFC.")
 reporter.append_summary_description("\nfMRI size = %f MB" % model_size_mb(non_img_extr))
 reporter.append_summary_description("\nGenerator size = %f MB" % model_size_mb(netG))
 

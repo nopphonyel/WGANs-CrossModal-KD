@@ -1,6 +1,6 @@
-CrossModal Full ResNet18, no dropout
+CrossModal Full SimpleFC
 -----------------------------------------
-Using fMRI-FE that based on ResNet18 
+Using fMRI-FE that based on SimpleFC
 
 Here are experiment results.
 <===[[ Loss ]]===> {

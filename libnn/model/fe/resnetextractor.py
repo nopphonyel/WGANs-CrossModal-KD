@@ -37,13 +37,13 @@ class ReshaperBlock(nn.Module):
         return x.reshape(self.ts)
 
 
-class ShallowResNet18Extractor(nn.Module):
+class ResNet18Extractor(nn.Module):
     """
-    This extractor model based on ResNet18
+    This extractor model based on ResNet34
     """
 
     def __init__(self, in_features, out_features, num_classes, dropout_p=0.0):
-        super(ShallowResNet18Extractor, self).__init__()
+        super(ResNet18Extractor, self).__init__()
         dp = dropout_p
 
         self.shaper = nn.Sequential(
@@ -64,14 +64,11 @@ class ShallowResNet18Extractor(nn.Module):
         self.l1 = nn.Sequential(
             ResBlock(64, 64, False),
             ResBlock(64, 64, False),
-            ResBlock(64, 64, False),
             nn.Dropout2d(p=dp)
         )
 
         self.l2 = nn.Sequential(
             ResBlock(64, 128, True),
-            ResBlock(128, 128, False),
-            ResBlock(128, 128, False),
             ResBlock(128, 128, False),
             nn.Dropout2d(p=dp)
         )
@@ -79,16 +76,11 @@ class ShallowResNet18Extractor(nn.Module):
         self.l3 = nn.Sequential(
             ResBlock(128, 256, True),
             ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
             nn.Dropout2d(p=dp)
         )
 
         self.l4 = nn.Sequential(
             ResBlock(256, 512, True),
-            ResBlock(512, 512, False),
             ResBlock(512, 512, False),
             nn.Dropout2d(p=dp)
         )
@@ -106,8 +98,8 @@ class ShallowResNet18Extractor(nn.Module):
         x = self.l0(x)
         x = self.l1(x)
         x = self.l2(x)
-        # x = self.l3(x)
-        # x = self.l4(x)
+        x = self.l3(x)
+        x = self.l4(x)
         x = self.gap(x)
         x = torch.flatten(x, start_dim=1)
         latent = self.fc(x)
@@ -115,13 +107,13 @@ class ShallowResNet18Extractor(nn.Module):
         return latent, class_p
 
 
-class ResNet18Extractor(nn.Module):
+class ResNet34Extractor(nn.Module):
     """
     This extractor model based on ResNet18
     """
 
     def __init__(self, in_features, out_features, num_classes, dropout_p=0.0):
-        super(ResNet18Extractor, self).__init__()
+        super(ResNet34Extractor, self).__init__()
         dp = dropout_p
 
         self.shaper = nn.Sequential(
@@ -193,13 +185,13 @@ class ResNet18Extractor(nn.Module):
         return latent, class_p
 
 
-class ResNet34Extractor(nn.Module):
+class ShallowResNet34Extractor(nn.Module):
     """
-    This extractor model based on ResNet34
+    This extractor model based on ResNet18
     """
 
     def __init__(self, in_features, out_features, num_classes, dropout_p=0.0):
-        super(ResNet34Extractor, self).__init__()
+        super(ShallowResNet34Extractor, self).__init__()
         dp = dropout_p
 
         self.shaper = nn.Sequential(
@@ -232,23 +224,6 @@ class ResNet34Extractor(nn.Module):
             nn.Dropout2d(p=dp)
         )
 
-        self.l3 = nn.Sequential(
-            ResBlock(128, 256, True),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            ResBlock(256, 256, False),
-            nn.Dropout2d(p=dp)
-        )
-
-        self.l4 = nn.Sequential(
-            ResBlock(256, 512, True),
-            ResBlock(512, 512, False),
-            ResBlock(512, 512, False),
-            nn.Dropout2d(p=dp)
-        )
-
         self.gap = torch.nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Sequential(
             nn.Flatten(start_dim=1),
@@ -262,10 +237,16 @@ class ResNet34Extractor(nn.Module):
         x = self.l0(x)
         x = self.l1(x)
         x = self.l2(x)
-        x = self.l3(x)
-        x = self.l4(x)
         x = self.gap(x)
         x = torch.flatten(x, start_dim=1)
         latent = self.fc(x)
         class_p = self.final_fc(latent)
         return latent, class_p
+
+
+class ResNet50Extractor(nn.Module):
+    def __init__(self):
+        super(ResNet50Extractor, self).__init__()
+
+    def forward(self, x):
+        return x
