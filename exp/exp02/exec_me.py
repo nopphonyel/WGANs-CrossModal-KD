@@ -91,8 +91,8 @@ def j1_loss(l1, l2, f1, f2):
 
 # - WGANs section
 num_classes = ds.get_num_classes()
-netD = wgans.Discriminator(ngpu=1, num_classes=num_classes, latent_size=200, img_channel=1).to(dev)
-netG = wgans.Generator(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
+netD = wgans.Discriminator1Block(ngpu=1, num_classes=num_classes, latent_size=200, img_channel=1).to(dev)
+netG = wgans.Generator1Block(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
 
 if (dev == 'cuda') and (ngpu > 1):
     netD = nn.DataParallel(netD, list(range(ngpu)))

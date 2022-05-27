@@ -1,0 +1,45 @@
+CrossModal Full ResNet18
+-----------------------------
+Using fMRI-FE that based on ResNet18. I just want to see how well full ResNet18 perform. 
+fMRI size = 12.803530 MB 
+Generator size = 17.570137 MB 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-72.49
+	> max:-18.43
+	> last:-70.04
+j1
+	> min:-72.49
+	> max:-22.74
+	> last:-70.04
+j2
+	> min:0.00
+	> max:1.83
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.48
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:15.43
+	> max:48.84
+	> last:39.12
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:95.83
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-112.70
+	> max:-19.12
+	> last:-21.37
+g_loss
+	> min:62.13
+	> max:577.28
+	> last:575.24
+}

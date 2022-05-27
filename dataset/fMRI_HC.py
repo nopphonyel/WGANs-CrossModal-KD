@@ -53,6 +53,10 @@ class fMRI_HC_Dataset(Dataset):
         label = self.dat['l'][idx]
         return fmri.to(self.__dev), img.to(self.__dev), label.to(self.__dev)
 
+    def get_feature_size(self):
+        fmri = self.dat[self.p_id][self.v][0, :]
+        return fmri.shape
+
     @staticmethod
     def get_name():
         return "fMRI_HC_Dataset"

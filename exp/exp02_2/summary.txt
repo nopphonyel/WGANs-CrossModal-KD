@@ -4,8 +4,40 @@ This experiment using FE that based on ResNet34 but remove layer 3 and 4 due to 
 
 Here are experiment results.
 <===[[ Loss ]]===> {
+total
+	> min:-73.06
+	> max:-16.84
+	> last:-70.82
+j1
+	> min:-73.06
+	> max:-21.33
+	> last:-70.82
+j2
+	> min:0.00
+	> max:1.82
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.67
+	> last:0.00
 }
 <===[[ Accuracy ]]===> {
+j2_acc
+	> min:14.58
+	> max:50.23
+	> last:44.14
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:97.22
 }
 <===[[ WGANs ]]===> {
+d_loss
+	> min:-95.29
+	> max:-21.73
+	> last:-31.96
+g_loss
+	> min:58.06
+	> max:525.43
+	> last:521.85
 }
