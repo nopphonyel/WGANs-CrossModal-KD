@@ -1,6 +1,7 @@
 from torch import nn
 
 
+
 # custom weights initialization called on netG and netD
 def weights_init(model):
     for m in model.modules():  # loop all layers in that model

@@ -3,16 +3,16 @@ from libnn.model.wgans import Generator, Discriminator
 
 
 class GeneratorKD(Generator):
-    def __init__(self, ngpu, num_classes, embed_size=100, z_dim=100, latent_size=200, img_channel=3, gen_dim=64):
-        super(GeneratorKD, self).__init__(self,
-                                          ngpu,
-                                          num_classes,
-                                          embed_size=embed_size,
-                                          z_dim=z_dim,
-                                          latent_size=latent_size,
-                                          img_channel=img_channel,
-                                          gen_dim=gen_dim
-                                          )
+    def __init__(self, ngpu, num_classes, emb_size=100, z_dim=100, latent_size=200, img_channel=3, gen_dim=64):
+        super(GeneratorKD, self).__init__(
+            ngpu=ngpu,
+            num_classes=num_classes,
+            embed_size=emb_size,
+            z_dim=z_dim,
+            latent_size=latent_size,
+            img_channel=img_channel,
+            gen_dim=gen_dim
+        )
 
     def forward(self, zz, labels, semantic_latent):
         semantic_latent = semantic_latent.unsqueeze(2).unsqueeze(3)  # batch, feature_size, 1, 1

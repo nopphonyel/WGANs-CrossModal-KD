@@ -1,6 +1,6 @@
-CrossModal Full SimpleFC
+CrossModal Full SimpleFC (4Layers)
 -----------------------------------------
-Using fMRI-FE that based on SimpleFC
+Using fMRI-FE that based on SimpleFC (4Layers) latent @ layer 3
 
 Here are experiment results.
 <===[[ Loss ]]===> {

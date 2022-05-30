@@ -179,11 +179,15 @@ class LoggerGroup:
 
 
 class Reporter:
-    def __init__(self, *logger_groups):
+    def __init__(self, *logger_groups, log_buffer_size=10):
         self.l_g: List = list(logger_groups)
         self.line_count = 0  # This variable only use in classic reporter
         self.exp_name = "**An Experiment**"
         self.sum_desc = ""
+
+        self.log_bs = log_buffer_size
+        self.log_list = []
+        self.new_log = False
 
     def __init_stdscr(self):
         try:
@@ -227,6 +231,14 @@ class Reporter:
     def append_logger_dict(self, l_g_dict: dict):
         for ek in l_g_dict.keys():
             self.l_g += [l_g_dict[ek]]
+
+    def log(self, text: str, tag: str = "I"):
+        """
+        param text: Text to show while report
+        param show_time: Duration of text to be shown (count as report() called times)
+        """
+        self.new_log = True
+        self.log_list.append("<%s>: %s" % (tag, text))
 
     def report(self, epch=None, b_i=None, b_all=None):
         """
@@ -275,7 +287,33 @@ class Reporter:
                         var_report += "{}[N/A], ".format(e_v)
                 self.stdscr.addstr(line_idx, 0, var_report[0:-2])
                 line_idx += 1
+
+            # Print the log list
+            if self.new_log:
+                line_idx += 1
+                self.stdscr.addstr(line_idx, 0, "[LOG]--------")
+                line_idx += 1
+                self._update_log(line_idx)
+                self.new_log = False
             self.stdscr.refresh()
+
+    def _update_log(self, curr_lin):
+        it_lin = curr_lin
+        # In case that log buffer is full
+        ll_len = len(self.log_list)
+        if ll_len > self.log_bs:
+            # Clear all log first
+            for e_log in self.log_list[:-1]:  # Run loop through all log except last one
+                self.stdscr.addstr(it_lin, 0, len(e_log) * " ")
+                it_lin += 1
+            self.log_list = self.log_list[ll_len - self.log_bs:]
+
+        # Reset the line position
+        it_lin = curr_lin
+        # Then re-print it
+        for e_log in self.log_list:
+            self.stdscr.addstr(it_lin, 0, e_log)
+            it_lin += 1
 
     def set_experiment_name(self, exp_name):
         self.exp_name = exp_name
@@ -304,7 +342,6 @@ class Reporter:
                 curses.endwin()
             except AttributeError:
                 print("<I> : Training script was done while screen not active.")
-
 
 # if __name__ == '__main__':
 #     a = LoggerGroup("Untitled")

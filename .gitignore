@@ -1,6 +1,9 @@
 ./.idea
+
 *.pyc
 
 *.png
 
 .idea/
+
+*.pth

@@ -1,0 +1,34 @@
+CrossModal Classifier SimpleFC (10 layers)
+-----------------------------------------------
+Using fMRI-FE that based on SimpleFC (10 layers, latent@layer[8]). 
+fMRI size = 3.016424 MB 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-71.00
+	> max:2.19
+	> last:-69.44
+j1
+	> min:-71.00
+	> max:-1.59
+	> last:-69.44
+j2
+	> min:0.00
+	> max:4.20
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.01
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:16.36
+	> max:54.17
+	> last:51.39
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:98.61
+}

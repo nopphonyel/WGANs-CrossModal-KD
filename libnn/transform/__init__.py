@@ -17,3 +17,15 @@ class TanhRescale(nn.Module):
 
     def forward(self, x):
         return ((x - self.mn) / self.db2) - 1.0
+
+
+class GreyScaleToRGB(nn.Module):
+    """
+    Convert any grey scale image tensor to rgb image tensor
+    """
+
+    def __init__(self):
+        super(GreyScaleToRGB, self).__init__()
+
+    def forward(self, x):
+        return x.repeat(3, 1, 1)

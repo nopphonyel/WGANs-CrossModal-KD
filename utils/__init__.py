@@ -107,9 +107,14 @@ def mkdir(path_str):
         print("<I> Directory exists")
 
 
-def save_model(model_param, path, filename):
+def save_model(model: nn.Module, path, filename):
     full_path = os.path.join(path, filename)
-    torch.save(model_param.state_dict(), full_path)
+    torch.save(model.state_dict(), full_path)
+
+
+def load_model(model: nn.Module, path, filename):
+    full_path = os.path.join(path, filename)
+    return model.load_state_dict(torch.load(full_path))
 
 
 def model_size_mb(nn_model: nn.Module):
