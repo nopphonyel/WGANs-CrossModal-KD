@@ -10,6 +10,11 @@ import sys
 
 
 class LoggerGroup:
+    __F_HIST = '__F_HIST'
+    __EPCHS = '__EPCHS'
+    __EACH_EPCH = '__EACH_EPCH'
+    __SUB_EACH_EPCH = '__SUB_EACH_EPCH'
+
     def __init__(self, title="LoggerGroup"):
         """
         This class will create a dictionary for each variable which contains 3 keys
@@ -24,10 +29,10 @@ class LoggerGroup:
     def add_var(self, *keys):
         for e_k in keys:
             self.__dict[e_k] = {
-                'f_hist': [],
-                'epchs': [],
-                'each_epch': [],
-                'sub_each_epch': []
+                LoggerGroup.__F_HIST: [],
+                LoggerGroup.__EPCHS: [],
+                LoggerGroup.__EACH_EPCH: [],
+                LoggerGroup.__SUB_EACH_EPCH: []
             }
 
     def get_latest_step(self):
@@ -36,46 +41,66 @@ class LoggerGroup:
         """
         r_obj = {}
         for e_k in self.__dict.keys():
-            if len(self.__dict[e_k]['each_epch']) > 0:  # if 'each_epch' steps is not empty return the latest step
-                r_obj[e_k] = self.__dict[e_k]['each_epch'][-1]
-            elif len(self.__dict[e_k]['epchs']) > 0:  # but if it's no step available, return 'epchs' instead
-                r_obj[e_k] = self.__dict[e_k]['epchs'][-1]
+            if len(self.__dict[e_k][LoggerGroup.__EACH_EPCH]) > 0:  # if 'each_epch' steps is not empty return the latest step
+                r_obj[e_k] = self.__dict[e_k][LoggerGroup.__EACH_EPCH][-1]
+            elif len(self.__dict[e_k][LoggerGroup.__EPCHS]) > 0:  # but if it's no step available, return 'epchs' instead
+                r_obj[e_k] = self.__dict[e_k][LoggerGroup.__EPCHS][-1]
             else:  # but if there is no step at all, then return none... let the reporter do the rest
                 r_obj[e_k] = None
         return r_obj
 
+    def get_value(self, mode: str, key: str):
+        """
+        :param mode: 3 modes are available to get value which are max, min and last
+        :param key: key that available in the logger group
+        """
+        # Check the available number of log first
+        if len(self.__dict[key][LoggerGroup.__SUB_EACH_EPCH]) != 0:
+            target_list = self.__dict[key][LoggerGroup.__SUB_EACH_EPCH]
+        elif len(self.__dict[key][LoggerGroup.__EACH_EPCH]) != 0:
+            target_list = self.__dict[key][LoggerGroup.__EACH_EPCH]
+        else:
+            target_list = self.__dict[key][LoggerGroup.__EPCHS]
+
+        if mode.lower() == 'max':
+            return max(target_list)
+        elif mode.lower() == 'min':
+            return min(target_list)
+        elif mode.lower() == 'last':
+            return target_list[-1]
+
     def collect_sub_step(self, key: str, value: float):
         if key not in self.__dict.keys():
             self.add_var(key)
-        self.__dict[key]['sub_each_epch'].append(value)
+        self.__dict[key][LoggerGroup.__SUB_EACH_EPCH].append(value)
 
     def flush_sub_step_all(self):
         for e_k in self.__dict.keys():
-            sub_each_epch = self.__dict[e_k]['sub_each_epch']
+            sub_each_epch = self.__dict[e_k][LoggerGroup.__SUB_EACH_EPCH]
             if len(sub_each_epch) > 0:
-                # self.__dict[e_k]['f_hist'] += sub_each_epch
-                self.__dict[e_k]['each_epch'].append(sum(sub_each_epch) / len(sub_each_epch))
-                self.__dict[e_k]['sub_each_epch'] = []
+                # self.__dict[e_k][LoggerGroup.__F_HIST] += sub_each_epch
+                self.__dict[e_k][LoggerGroup.__EACH_EPCH].append(sum(sub_each_epch) / len(sub_each_epch))
+                self.__dict[e_k][LoggerGroup.__SUB_EACH_EPCH] = []
 
     def collect_step(self, key: str, value: float):
         if key not in self.__dict.keys():
             self.add_var(key)
-        self.__dict[key]['each_epch'].append(value)
+        self.__dict[key][LoggerGroup.__EACH_EPCH].append(value)
 
     def flush_step_all(self):
         for e_k in self.__dict.keys():
-            each_epch = self.__dict[e_k]['each_epch']
+            each_epch = self.__dict[e_k][LoggerGroup.__EACH_EPCH]
             if len(each_epch) == 0:  # Skip the key if there is nothing to flush
                 continue
             else:
-                self.__dict[e_k]['f_hist'] += each_epch
-                self.__dict[e_k]['epchs'].append(sum(each_epch) / len(each_epch))
-                self.__dict[e_k]['each_epch'] = []
+                self.__dict[e_k][LoggerGroup.__F_HIST] += each_epch
+                self.__dict[e_k][LoggerGroup.__EPCHS].append(sum(each_epch) / len(each_epch))
+                self.__dict[e_k][LoggerGroup.__EACH_EPCH] = []
 
     def collect_epch(self, key: str, value: float):
         if key not in self.__dict.keys():
             self.add_var(key)
-        self.__dict[key]['epchs'].append(value)
+        self.__dict[key][LoggerGroup.__EPCHS].append(value)
 
     def report(
             self,
@@ -116,7 +141,7 @@ class LoggerGroup:
         :param full_hist Plot the full history (True) or plot the epochs history (False)
         :param show_legend Specify to show plot legend or not
         """
-        hist_mode = 'f_hist' if full_hist else 'epchs'
+        hist_mode = LoggerGroup.__F_HIST if full_hist else LoggerGroup.__EPCHS
         fig_title = self.title + "_" + hist_mode
         plt.title(fig_title)
         for e_k in key_list:
@@ -129,7 +154,7 @@ class LoggerGroup:
             plt.legend()
         if save_fig:
             f_name = self.title + "-"
-            f_name += 'f_hist' if full_hist else 'epchs'
+            f_name += LoggerGroup.__F_HIST if full_hist else LoggerGroup.__EPCHS
             f_name += '_log_scaled' if log_scale else ''
             plt.savefig("./%s" % f_name)
         if show_fig:
@@ -148,7 +173,7 @@ class LoggerGroup:
         return dtx + "\n}"
 
     def __gen_summary(self, key, indent=0, log_scale: bool = False, full_hist: bool = False):
-        arr = self.__dict[key]['f_hist'] if full_hist else self.__dict[key]['epchs']
+        arr = self.__dict[key][LoggerGroup.__F_HIST] if full_hist else self.__dict[key][LoggerGroup.__EPCHS]
         ind = '\t' * indent
         if log_scale:
             arr = np.log(np.add(arr, 1))
@@ -265,10 +290,22 @@ class Reporter:
                     else:
                         report_str += "{}[N/A],".format(e_v)
                 report_str = report_str[0:-1] + ' | '
+
+            if self.new_log:
+                # Clear the text first
+                sys.stdout.write('\r' + (len(report_str[0:-3])) * ' ')
+                sys.stdout.write('\r' + self.log_list[-1] + '\n')
+                # Switch off new_log flag
+                self.new_log = False
             sys.stdout.write('\r' + report_str[0:-3])
 
         else:
             line_idx = 0
+            # Show experiment name
+            self.stdscr.addstr(line_idx, 0, "EXPERIMENT: %s" % self.exp_name)
+            line_idx += 1
+
+            # Show running epoch, batch details
             if epch is not None and b_i is not None and b_all is not None:
                 self.stdscr.addstr(line_idx, 0, report_str)
                 line_idx += 1
@@ -307,7 +344,6 @@ class Reporter:
                 self.stdscr.addstr(it_lin, 0, len(e_log) * " ")
                 it_lin += 1
             self.log_list = self.log_list[ll_len - self.log_bs:]
-
         # Reset the line position
         it_lin = curr_lin
         # Then re-print it

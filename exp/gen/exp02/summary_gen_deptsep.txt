@@ -1,0 +1,25 @@
+Generator DepSeptDC-GANs
+-----------------------------
+Mainly experiment on Generator: based on DC-GANs using Depth-wise Separable conv 
+fMRI extractor: 4 layers SimpleFC 
+Image extractor: AlexNet 
+fMRI size = 1.184590 MB 
+Generator size = 1.139289 MB 
+
+Here are experiment results.
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-95.23
+	> max:-0.93
+	> last:-1.03
+g_loss
+	> min:56.61
+	> max:193.37
+	> last:193.05
+}
+<===[[ FID ]]===> {
+FID
+	> min:368.82
+	> max:12445.30
+	> last:1067.45
+}

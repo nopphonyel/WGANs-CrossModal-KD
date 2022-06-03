@@ -6,6 +6,7 @@ import torchvision.transforms
 from torch.utils.data import DataLoader
 
 import libnn.transform
+import utils.path
 from utils import *
 from libnn.model import weights_init, wgans, wgans_kd
 from libnn.model.wgans_kd import teachers
@@ -46,6 +47,8 @@ FID_CALC_FREQ = GenCommonConfig.FID_CALC_FREQ
 __dirname__ = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(__dirname__, "export_content/saved_models/%s/" % fMRI_HC_Dataset.get_name())
 IMAGE_PATH = os.path.join(__dirname__, "export_content/images/%s/" % fMRI_HC_Dataset.get_name())
+WEIG_COL_PATH = utils.path.get_weights_collection_path()
+
 # Also create a necessary directory to export stuff
 mkdir(MODEL_PATH)
 mkdir(IMAGE_PATH)
@@ -58,7 +61,7 @@ torch.manual_seed(manualSeed)
 # ----Dataset declaration----
 img_tf = nn.Sequential(
     torchvision.transforms.Resize((64, 64)),
-    libnn.transform.TanhRescale(min=0, max=255, padding=0.01)
+    libnn.transform.TanhRescale(min_in_val=0, max_in_val=255, margin_val=0.01)
 )
 
 ds = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf).to(dev)
@@ -73,7 +76,7 @@ non_img_extr = SimpleFCExtractor(in_features=948, num_layers=4, num_classes=6, l
 img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False)
 
 load_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr.pth")
-load_model(img_extr, path=MODEL_PATH, filename="img_extr.pth")
+load_model(img_extr, path=WEIG_COL_PATH, filename="alexFID.pth")
 
 non_img_extr.to(dev).eval()
 img_extr.to(dev).eval()

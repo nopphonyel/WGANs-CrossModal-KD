@@ -175,11 +175,11 @@ class Discriminator(nn.Module):
     Same as Generator... but it's all on Discriminator
     """
 
-    def __init__(self, ngpu, num_classes, image_size=64, latent_size=200, img_channel=3, dis_dim=64):
+    def __init__(self, ngpu, num_classes, img_size=64, latent_size=200, img_channel=3, dis_dim=64):
         """
         :param ngpu:
         :param num_classes: number of image class (use for do label embedding)
-        :param image_size: size of input image also used for specify embedding size (64 is recommended)
+        :param img_size: size of input image also used for specify embedding size (64 is recommended)
         :param latent_size: size of latent vector
         :param img_channel: number of image channel
         :param dis_dim: number of dimension factor
@@ -187,9 +187,9 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         self.ngpu = ngpu
         self.img_channel = img_channel
-        self.image_size = image_size if type(image_size) is tuple else (image_size, image_size)
+        self.image_size = img_size if type(img_size) is tuple else (img_size, img_size)
         self.latent_joining = nn.Sequential(
-            nn.Linear(latent_size, image_size * image_size)
+            nn.Linear(latent_size, img_size * img_size)
         )
         self.b_01 = nn.Sequential(
             nn.Conv2d(

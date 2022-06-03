@@ -6,21 +6,25 @@ import torchvision.transforms
 from torch.utils.data import DataLoader
 
 import libnn.transform
+import utils.path
 from utils import *
-from libnn.model import weights_init, wgans
+from libnn.model import weights_init, wgans, wgans_kd
+from libnn.model.wgans_kd import teachers
 from libnn.model.wgans import gradient_penalty
 from dataset.fMRI_HC import fMRI_HC_Dataset
 from libnn.model.fe import *
 
 import matplotlib.pyplot as plt
-
 from utils.logger import LoggerGroup, Reporter
+
+from exp.gen.gen_common_config import GenCommonConfig
+from libnn.metrics.fid import FID
 
 # CONFIG section
 ngpu = 1
 
-dev = "cuda"
-EPOCHS = 10000
+dev = "cuda:1"
+EPOCHS = 6000
 load_at_epoch = 0
 LR = 1e-4
 BS = 16
@@ -33,13 +37,16 @@ lambda_gp = 10
 d_epoch_steps = 5
 g_epoch_steps = 1
 
-preview_gen_num = 20
+preview_gen_num = 10
 export_gen_img_every = 20
+
+FID_CALC_FREQ = GenCommonConfig.FID_CALC_FREQ
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(__dirname__, "export_content/saved_models/%s/" % fMRI_HC_Dataset.get_name())
 IMAGE_PATH = os.path.join(__dirname__, "export_content/images/%s/" % fMRI_HC_Dataset.get_name())
+WEIG_COL_PATH = utils.path.get_weights_collection_path()
 # Also create a necessary directory to export stuff
 mkdir(MODEL_PATH)
 mkdir(IMAGE_PATH)
@@ -63,11 +70,20 @@ ld_val = DataLoader(ds_val, batch_size=len(ds_val), shuffle=True)
 
 # ----Model declaration----
 # - Classifier|Extractor section
-non_img_extr = SimpleFCExtractor(in_features=948, num_layers=10, num_classes=6, latent_idx=8, latent_size=200).to(dev)
-img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False).to(dev)
+non_img_extr = SimpleFCExtractor(in_features=948, num_layers=4, num_classes=6, latent_idx=2, latent_size=200)
+img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False)
 
-nimg_optim = torch.optim.Adam(non_img_extr.parameters(), lr=LR)
-img_optim = torch.optim.Adam(img_extr.parameters(), lr=LR)
+load_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr.pth")
+load_model(img_extr, path=WEIG_COL_PATH, filename="alexFID.pth")
+
+non_img_extr.to(dev).eval()
+img_extr.to(dev).eval()
+
+# nimg_optim = torch.optim.Adam(non_img_extr.parameters(), lr=LR)
+# img_optim = torch.optim.Adam(img_extr.parameters(), lr=LR)
+
+# Metrics function declaration
+fid = FID()
 
 # Loss function declaration
 criterion = nn.CrossEntropyLoss()
@@ -95,7 +111,8 @@ def j1_loss(l1, l2, f1, f2):
 # - WGANs section
 num_classes = ds.get_num_classes()
 netD = wgans.Discriminator(ngpu=1, num_classes=num_classes, latent_size=200, img_channel=1).to(dev)
-netG = wgans.Generator(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
+netG = wgans_kd.Generator3Layers(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
+# netG = wgans.Generator(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
 
 if (dev == 'cuda') and (ngpu > 1):
     netD = nn.DataParallel(netD, list(range(ngpu)))
@@ -115,14 +132,16 @@ d_optim = torch.optim.Adam(netD.parameters(), lr=LR, betas=(0.0, 0.9))
 g_optim = torch.optim.Adam(netG.parameters(), lr=LR, betas=(0.0, 0.9))
 
 # ----Value tracker declaration----
-loss_logger = LoggerGroup("Loss")
-acc_logger = LoggerGroup("Accuracy")
 wgan_logger = LoggerGroup("WGANs")
+fid_logger = LoggerGroup("FID")
 
-reporter = Reporter(loss_logger, acc_logger, wgan_logger)
+reporter = Reporter(wgan_logger, fid_logger, log_buffer_size=15)
 
-reporter.set_experiment_name("CrossModal SimpleFC (10 layers)")
-reporter.append_summary_description("Using fMRI-FE that based on SimpleFC (10 layers, latent@layer[9]).")
+reporter.set_experiment_name("Generator 3 layers")
+reporter.append_summary_description(
+    "Mainly experiment on Generator: my own 3 layers Generator with ridiculously large kernel size")
+reporter.append_summary_description("\nfMRI extractor: 4 layers SimpleFC")
+reporter.append_summary_description("\nImage extractor: AlexNet")
 reporter.append_summary_description("\nfMRI size = %f MB" % model_size_mb(non_img_extr))
 reporter.append_summary_description("\nGenerator size = %f MB" % model_size_mb(netG))
 
@@ -131,32 +150,13 @@ if not reporter.review():
     quit()
 
 try:
+    best = {
+        "fid": None
+    }
     for e in range(EPOCHS):
         # Train session
         for i, (fmri, img, label_idx) in enumerate(ld):
             curr_bs = fmri.shape[0]
-
-            l_p = F.one_hot(label_idx, num_classes=6).float()
-            fy_p, ly_p = non_img_extr(fmri)
-            fx_p, lx_p = img_extr(img)
-
-            j1 = j1_loss(l_p, l_p, fy_p, fx_p)
-            j2 = criterion(ly_p, label_idx)
-            j3 = criterion(lx_p, label_idx)
-
-            loss = j1 + j2 + j3
-
-            nimg_optim.zero_grad()
-            img_optim.zero_grad()
-            loss.backward()
-            nimg_optim.step()
-            img_optim.step()
-
-            # Report
-            loss_logger.collect_step('total', loss.item())
-            loss_logger.collect_step('j1', j1.item())
-            loss_logger.collect_step('j2', j2.item())
-            loss_logger.collect_step('j3', j3.item())
 
             # Train netD
             for _ in range(d_epoch_steps):
@@ -165,7 +165,7 @@ try:
 
                 zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
                 ld_real = netD(img, ly_p_idx, fy_p).view(-1)
-                fake_img = netG(zz, ly_p_idx, fy_p)
+                p_stem, l_01, l_03, l_05, fake_img = netG(zz, ly_p_idx, fy_p)
                 ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
 
                 gp = gradient_penalty(netD, fy_p, ly_p_idx, img, fake_img, dev)
@@ -182,7 +182,7 @@ try:
                 ly_p_idx = torch.argmax(ly_p, dim=1)
 
                 zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
-                fake_img = netG(zz, ly_p_idx, fy_p)
+                p_stem, l_01, l_03, l_05, fake_img = netG(zz, ly_p_idx, fy_p)
                 ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
 
                 g_loss = -torch.mean(ld_fake)
@@ -206,37 +206,43 @@ try:
                 _, lx_p = img_extr(img_val)
                 ly_p_idx = torch.argmax(ly_p, dim=1)
                 lx_p_idx = torch.argmax(lx_p, dim=1)
-                j2_acc = torch.sum(ly_p_idx == label_idx_val) / label_idx_val.shape[0]
-                j3_acc = torch.sum(lx_p_idx == label_idx_val) / label_idx_val.shape[0]
 
                 # Only export image when end of 'export_gen_img_every'th epoch
                 if i == 0 and (e + 1) % export_gen_img_every == 0:
                     zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
-                    fy_p = fy_p[0:preview_gen_num, :]
-                    ly_p_idx = ly_p_idx[0:preview_gen_num]
-                    fake_img = netG(zz, ly_p_idx, fy_p)
+                    fy_p_exp = fy_p[0:preview_gen_num, :]
+                    ly_p_idx_exp = ly_p_idx[0:preview_gen_num]
+                    p_stem, l_01, l_03, l_05, fake_img = netG(zz, ly_p_idx_exp, fy_p_exp)
 
                     real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
                     fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
                     img_grid = torch.cat((real_img, fake_img), 1)
                     save_image(img_grid, IMAGE_PATH + "epoch_{}.png".format(e), normalize=False)
 
-                acc_logger.collect_step('j2_acc', j2_acc.item() * 100)
-                acc_logger.collect_step('j3_acc', j3_acc.item() * 100)
+                if i == 0 and (e + 1) % FID_CALC_FREQ == 0:
+                    zz = torch.randn(fmri_val.shape[0], z_dim, 1, 1, device=dev)
+                    p_stem, l_01, l_03, l_05, fake_img = netG(zz, ly_p_idx, fy_p)
 
-            non_img_extr.train()
-            img_extr.train()
+                    gen_lat, _ = img_extr(fake_img)
+                    real_lat, _ = img_extr(img_val)
+
+                    fid_score = fid(real_lat, gen_lat)
+                    fid_logger.collect_step('FID', fid_score)
+
+                    # Decided to save model or not
+                    if best['fid'] is None or best['fid'] > fid_score:
+                        best['fid'] = fid_score
+                        reporter.log("Best FID detected: %.4f -> Exporting Generator" % fid_score)
+                        save_model(netG, MODEL_PATH, "netG_3layers.pth")
 
             reporter.report(epch=e + 1, b_i=i, b_all=len(ld) - 1)
 
-        loss_logger.flush_step_all()
-        acc_logger.flush_step_all()
         wgan_logger.flush_step_all()
+        fid_logger.flush_step_all()
 
-    loss_logger.report()
-    acc_logger.report()
+    wgan_logger.report()
+    fid_logger.report()
 
-    save_model(netG, path=MODEL_PATH, filename="netG.pth")
 finally:
     reporter.stop()
-    reporter.write_summary(os.path.dirname(__file__), f_name="summary_fc8l.txt")
+    reporter.write_summary(os.path.dirname(__file__), f_name="summary_gen_3layers.txt")

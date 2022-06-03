@@ -1,0 +1,25 @@
+Generator 3 layers
+-----------------------
+Mainly experiment on Generator: my own 3 layers Generator with ridiculously large kernel size 
+fMRI extractor: 4 layers SimpleFC 
+Image extractor: AlexNet 
+fMRI size = 1.184590 MB 
+Generator size = 0.763225 MB 
+
+Here are experiment results.
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-105.69
+	> max:-2.78
+	> last:-3.04
+g_loss
+	> min:62.09
+	> max:193.91
+	> last:173.63
+}
+<===[[ FID ]]===> {
+FID
+	> min:700.72
+	> max:14621.99
+	> last:1329.20
+}

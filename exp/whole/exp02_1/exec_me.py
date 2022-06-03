@@ -52,7 +52,7 @@ torch.manual_seed(manualSeed)
 # ----Dataset declaration----
 img_tf = nn.Sequential(
     torchvision.transforms.Resize((64, 64)),
-    libnn.transform.TanhRescale(min=0, max=255, padding=0.01)
+    libnn.transform.TanhRescale(min_in_val=0, max_in_val=255, margin_val=0.01)
 )
 
 ds = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf).to(dev)
