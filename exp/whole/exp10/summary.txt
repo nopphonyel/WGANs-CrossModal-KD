@@ -1,0 +1,51 @@
+Whole framework -> for export the Generator and fMRI
+---------------------------------------------------------
+This experiment will use -> 
+	> FE: SimpleFC 4 layers. 
+	> GEN: DCGANs original arch. 
+fMRI size = 1.184590 MB 
+Generator size = 17.570137 MB 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-72.38
+	> max:0.11
+	> last:-70.20
+j1
+	> min:-72.38
+	> max:-3.67
+	> last:-70.20
+j2
+	> min:0.00
+	> max:2.22
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.05
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:14.20
+	> max:55.48
+	> last:50.00
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:95.83
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-124.68
+	> max:-23.56
+	> last:-31.54
+g_loss
+	> min:61.67
+	> max:406.60
+	> last:403.23
+FID
+	> min:259.28
+	> max:10157.47
+	> last:673.48
+}

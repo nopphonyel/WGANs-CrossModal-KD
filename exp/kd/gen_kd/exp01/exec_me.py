@@ -4,7 +4,7 @@ import torch
 import torchvision
 import torch.nn as nn
 
-from utils import load_model, mkdir
+from utils import load_model, mkdir, path
 from utils.logger import LoggerGroup, Reporter
 
 from dataset.fMRI_HC import fMRI_HC_Dataset, DataLoader
@@ -45,6 +45,8 @@ LAMBDA_KD = 1.0
 __dirname__ = os.path.dirname(__file__)
 MODEL_PATH = os.path.join(__dirname__, "export_content/saved_models/%s/" % fMRI_HC_Dataset.get_name())
 IMAGE_PATH = os.path.join(__dirname__, "export_content/images/%s/" % fMRI_HC_Dataset.get_name())
+WEIG_COL_PATH = path.get_weights_collection_path()
+WEIG_COL_KD_PATH = path.get_weights_collection_path(sub_dir="kd")
 # Also create a necessary directory to export stuff
 mkdir(MODEL_PATH)
 mkdir(IMAGE_PATH)
@@ -80,12 +82,12 @@ netD_t = Discriminator(
 ).to(DEV)
 
 non_img_extr = SimpleFCExtractor(in_features=948, num_layers=4, num_classes=6, latent_idx=2, latent_size=200)
-load_model(non_img_extr, MODEL_PATH, 'non_img_extr.pth')
-img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False)
-load_model(img_extr, MODEL_PATH, 'img_extr.pth')
+load_model(non_img_extr, WEIG_COL_KD_PATH, 'non_img_extr_t.pth')
+fid_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, pretrain=False)
+load_model(fid_extr, WEIG_COL_PATH, 'alexFID.pth')
 
 non_img_extr.to(DEV).eval()
-img_extr.to(DEV).eval()
+fid_extr.to(DEV).eval()
 
 # Define Optimizer for each model
 g_s_optim = torch.optim.Adam(netG_s.parameters(), lr=LR, betas=BETAS)
@@ -173,9 +175,9 @@ try:
             _, _, _, _, _, _, fake_img_t = netG_t(zz, ly_p_idx, fy_p)
             _, _, _, _, fake_img_s = netG_s(zz, ly_p_idx, fy_p)
 
-            real_feature, _ = img_extr(img_val)
-            teacher_feature, _ = img_extr(fake_img_t)
-            student_feature, _ = img_extr(fake_img_s)
+            real_feature, _ = fid_extr(img_val)
+            teacher_feature, _ = fid_extr(fake_img_t)
+            student_feature, _ = fid_extr(fake_img_s)
 
             fid_value = fid(teacher_feature, student_feature)
             fid_lg.collect_step('T<->S', fid_value.item())

@@ -1,5 +1,5 @@
 from torch import nn
-from libnn import transform
+from libnn import transform, metrics
 
 class DeptSepConv2d(nn.Module):
     def __init__(self, nin, nout, kernel_size=3, padding=1, bias=False):

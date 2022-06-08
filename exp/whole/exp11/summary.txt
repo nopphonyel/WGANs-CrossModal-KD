@@ -1,0 +1,15 @@
+Whole framework -> to see how well GeneratorDeptSep performed
+------------------------------------------------------------------
+This experiment will use -> 
+	> FE: SimpleFC 4 layers. 
+	> GEN: DCGANs original arch but replaced with DeptWise Convolution Transpose 
+fMRI size = 1.184590 MB 
+Generator size = 1.139289 MB 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+}
+<===[[ Accuracy ]]===> {
+}
+<===[[ WGANs ]]===> {
+}

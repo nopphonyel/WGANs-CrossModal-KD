@@ -41,9 +41,11 @@ class LoggerGroup:
         """
         r_obj = {}
         for e_k in self.__dict.keys():
-            if len(self.__dict[e_k][LoggerGroup.__EACH_EPCH]) > 0:  # if 'each_epch' steps is not empty return the latest step
+            if len(self.__dict[e_k][
+                       LoggerGroup.__EACH_EPCH]) > 0:  # if 'each_epch' steps is not empty return the latest step
                 r_obj[e_k] = self.__dict[e_k][LoggerGroup.__EACH_EPCH][-1]
-            elif len(self.__dict[e_k][LoggerGroup.__EPCHS]) > 0:  # but if it's no step available, return 'epchs' instead
+            elif len(
+                    self.__dict[e_k][LoggerGroup.__EPCHS]) > 0:  # but if it's no step available, return 'epchs' instead
                 r_obj[e_k] = self.__dict[e_k][LoggerGroup.__EPCHS][-1]
             else:  # but if there is no step at all, then return none... let the reporter do the rest
                 r_obj[e_k] = None
@@ -54,13 +56,9 @@ class LoggerGroup:
         :param mode: 3 modes are available to get value which are max, min and last
         :param key: key that available in the logger group
         """
-        # Check the available number of log first
-        if len(self.__dict[key][LoggerGroup.__SUB_EACH_EPCH]) != 0:
-            target_list = self.__dict[key][LoggerGroup.__SUB_EACH_EPCH]
-        elif len(self.__dict[key][LoggerGroup.__EACH_EPCH]) != 0:
-            target_list = self.__dict[key][LoggerGroup.__EACH_EPCH]
-        else:
-            target_list = self.__dict[key][LoggerGroup.__EPCHS]
+        target_list = self.__dict[key][LoggerGroup.__EPCHS]
+        target_list += self.__dict[key][LoggerGroup.__EACH_EPCH]
+        target_list += self.__dict[key][LoggerGroup.__SUB_EACH_EPCH]
 
         if mode.lower() == 'max':
             return max(target_list)
@@ -68,6 +66,9 @@ class LoggerGroup:
             return min(target_list)
         elif mode.lower() == 'last':
             return target_list[-1]
+
+    def has_key(self, key):
+        return key in self.__dict.keys()
 
     def collect_sub_step(self, key: str, value: float):
         if key not in self.__dict.keys():
@@ -294,9 +295,14 @@ class Reporter:
             if self.new_log:
                 # Clear the text first
                 sys.stdout.write('\r' + (len(report_str[0:-3])) * ' ')
-                sys.stdout.write('\r' + self.log_list[-1] + '\n')
-                # Switch off new_log flag
+
+                # print each log in log_list
+                for e_log in self.log_list:
+                    sys.stdout.write('\r' + e_log + '\n')
+
+                # Switch off new_log flag and clear log_list since we already print it
                 self.new_log = False
+                self.log_list = []
             sys.stdout.write('\r' + report_str[0:-3])
 
         else:

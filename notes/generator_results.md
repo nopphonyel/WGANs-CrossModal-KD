@@ -3,6 +3,16 @@
 Note หน้านี้จะบันทึกเกี่ยวกับ Performance ของ Generator Arch ต่างๆ ซึ่งจะมีการเปรียบเทียบโมเดล
 ไม่กี่ Arch แต่จะเน้นหนักไปที่ KD แต่ละแบบว่าแบบไหนให้ผลที่ดีที่สุด
 
+### แบบ Whole framework training
+แบบนี้น่าจะน่าเชื่อถือกว่า เพราะว่าการจะวัดว่า Generator ออกมาดีหรือไม่ มันขึ้นกับ Model อื่นๆด้วย
+
+| exp_code      | Arch Name                | Model size (MB) | min FID* | Notes |
+|:--------------|--------------------------|-----------------|----------|-------|
+| `whole.exp10` | Generator-DCGANs         | 17.570137       | 259.28   |       |
+| `whole.exp11` | Generator-DeptSep-DCGANs | 1.139289        |          |       |
+| `whole.exp12` | 3Layers-Generator        | 0.763225        |          |       |
+
+
 ### แบบ Train เฉพาะ Generator
 
 แบบนี้คือ Pre-trained classifier มาก่อนแล้ว แล้วส่ง latent ที่ fmri extractor สร้างขึ้นมา
