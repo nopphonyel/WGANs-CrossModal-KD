@@ -58,8 +58,8 @@ netG_t = GeneratorKD(
     num_classes=NUM_CLASS,
     z_dim=Z_DIM,
     latent_size=LATENT_SIZE,
-    img_channel=IMG_CHAN).to(DEV).eval()
-load_model(model=netG_t, path=MODEL_PATH, filename='netG_DCGANs.pth')
+    img_channel=IMG_CHAN).to(DEV)
+load_model(model=netG_t, path=WEIG_COL_KD_PATH, filename='netG_t.pth')
 # netG_s = GeneratorDeptSep(
 #     ngpu=nGPU,
 #     num_classes=NUM_CLASS,
@@ -80,6 +80,7 @@ netD_t = Discriminator(
     latent_size=LATENT_SIZE,
     img_channel=IMG_CHAN
 ).to(DEV)
+load_model(netD_t, WEIG_COL_KD_PATH, 'netD_t.pth')
 
 non_img_extr = SimpleFCExtractor(in_features=948, num_layers=4, num_classes=6, latent_idx=2, latent_size=200)
 load_model(non_img_extr, WEIG_COL_KD_PATH, 'non_img_extr_t.pth')
@@ -114,7 +115,7 @@ total_kd_lg = LoggerGroup(title="Total KD Losses")
 kd_loss_lg = LoggerGroup(title="KD Losses")
 fid_lg = LoggerGroup(title="FID AlexNet")
 reporter = Reporter(kd_loss_lg, total_kd_lg, fid_lg, log_buffer_size=15)
-reporter.set_experiment_name("KD on Generator - Logit+AT_func")
+reporter.set_experiment_name("KD on 3LayersGenerator - Logit+AT_func")
 reporter.set_summary_description("This experiment aim to be an example of KD on generator")
 
 if not reporter.review():
@@ -137,9 +138,9 @@ try:
             zz = torch.randn(curr_bs, Z_DIM, 1, 1, device=DEV)
             p_stem_t, l_01_t, _, l_03_t, _, l_05_t, fake_img_t = netG_t(zz, ly_p_idx, fy_p)
             p_stem_s, l_01_s, l_03_s, l_05_s, fake_img_s = netG_s(zz, ly_p_idx, fy_p)
-            # ld_fake = netD(fake_img, ly_p_idx, fy_p).view(-1)
+            ld_fake = netD_t(fake_img_s, ly_p_idx, fy_p).view(-1)
 
-            # g_loss = -torch.mean(ld_fake)
+            g_loss = -torch.mean(ld_fake)
             kd_loss_logits_val = kd_loss_logits(fake_img_t, fake_img_s)
             kd_loss_at_val = [
                 kd_loss_at(l_01_s, l_01_t),
@@ -147,7 +148,7 @@ try:
                 kd_loss_at(l_05_t, l_05_s)
             ]
 
-            kd_loss_total_val = kd_loss_logits_val + (sum(kd_loss_at_val) / 3.0) * LAMBDA_KD
+            kd_loss_total_val = kd_loss_logits_val + g_loss + (sum(kd_loss_at_val) / 3.0) * LAMBDA_KD
 
             # Test back prop again... in hope that discriminator also improve the non-img
             g_s_optim.zero_grad()

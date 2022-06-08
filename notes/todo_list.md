@@ -7,7 +7,7 @@ On each day
 - [ ] อ่าน paper GCN อีกรอบนึง
 - [ ] อ่าน
   paper [Compressing GANs using Knowledge Distillation](https://arxiv.org/pdf/1902.00159.pdf?ref=https://githubhelp.com)
-- [ ] ทำ script gen_kd ที่รวม teacher discriminator เข้าไปด้วย
+- [x] ทำ script gen_kd ที่รวม teacher discriminator เข้าไปด้วย
     - อาจจะมีคำถามว่า ต้องจัด framework ยังไงบ้าง
         1. รวม Discriminator
         2. รวม Discriminator แล้ว train students เพิ่มอีกด้วย แต่ถ้าแบบนั้น มันจะไม่ได้เป็น offline มันเหมือนทำ online

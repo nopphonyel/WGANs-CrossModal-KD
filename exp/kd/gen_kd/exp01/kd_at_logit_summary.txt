@@ -1,0 +1,11 @@
+KD on Generator - Logit+AT_func
+------------------------------------
+This experiment aim to be an example of KD on generator
+
+Here are experiment results.
+<===[[ KD Losses ]]===> {
+}
+<===[[ Total KD Losses ]]===> {
+}
+<===[[ FID AlexNet ]]===> {
+}
