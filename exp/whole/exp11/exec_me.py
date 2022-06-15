@@ -251,11 +251,11 @@ try:
                     # After FID calculation is done, let's make a decision to export model or not.
                     if fid_logger.get_value(mode='min', key='FID') == fid_orig_val:
                         reporter.log("Min FID detected @ epoch=%d: %.2f" % (e, fid_orig_val))
-                        reporter.log("\tExporting Discriminator -> netD_t_exp11.pth")
+                        reporter.log("  > Exporting Discriminator -> netD_t_exp11.pth")
                         save_model(netD, path=MODEL_PATH, filename="netD_t_exp11.pth")
-                        reporter.log("\tExporting Discriminator -> netGDeptSep_t_exp11.pth")
+                        reporter.log("  > Exporting Discriminator -> netGDeptSep_t_exp11.pth")
                         save_model(netG, path=MODEL_PATH, filename="netGDeptSep_t_exp11.pth")
-                        reporter.log("\tExporting Discriminator -> non_img_extr_t_exp11.pth")
+                        reporter.log("  > Exporting Discriminator -> non_img_extr_t_exp11.pth")
                         save_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr_t_exp11.pth")
 
                         # Let's see how well the image generation

@@ -3,14 +3,21 @@
 On each day
 
 ## Pending...
+
 Not that hurry task.
+
 - [ ] อ่าน paper GCN อีกรอบนึง
 - [ ] อ่าน
   paper [Compressing GANs using Knowledge Distillation](https://arxiv.org/pdf/1902.00159.pdf?ref=https://githubhelp.com)
 
-
 ## 2022-06-15
-- [ ] Retrain GANs ทุกโมเดล แล้วใช้ FID Original ในการหาอันที่ดีที่สุดแทน
+
+- [ ] Retrain GANs ทุกโมเดล แล้วใช้ FID Original ในการหาอันที่ดีที่สุดแทน -> **Training in progress...**
+    - เท่าที่ดู เหมือนกับว่า FIDOrig ไม่ลดลงเลยหลังจาก epoch แรกไป
+        - ถ้าอย่างนั้นทดลองใช้ DirectFID (คือเอารูปมาคำนวนเลย) แต่ว่า Metrics
+          ตัวนี้ยังไม่เป็นที่ยอมรับเพราะเรามั่วขึ้นมาเอง
+        - ใช้ PixelWise loss ก็ดูเข้าท่าเหมือนกัน เพราะเราไม่ได้ Generate รูป แต่เราทำ mapping จาก fmri -> stim_image
+          ซึ่งมันมี stim image เป็น target อยู่แล้ว
 - [ ] Retrain KD เช่นกัน
 
 ## 2022-06-04
