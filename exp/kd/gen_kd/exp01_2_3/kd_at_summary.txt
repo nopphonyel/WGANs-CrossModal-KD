@@ -1,0 +1,52 @@
+KD on 3LayersGenerator - 3rdAT+Discrim Loss
+------------------------------------------------
+Using the third feature layer for calculating AT_KD loss
+	 > Train on dev: cuda:0 
+
+Here are experiment results.
+<===[[ KD Losses ]]===> {
+at_l3
+	> min:0.00
+	> max:0.00
+	> last:0.00
+}
+<===[[ Gen loss by Discrim ]]===> {
+->
+	> min:357.30
+	> max:373.59
+	> last:357.30
+}
+<===[[ Total KD Losses ]]===> {
+->
+	> min:357.30
+	> max:373.59
+	> last:357.30
+}
+<===[[ FID AlexNet ]]===> {
+T<->S
+	> min:5891.98
+	> max:6562.48
+	> last:5891.98
+S<->R
+	> min:6194.94
+	> max:6951.24
+	> last:6194.94
+T<->R
+	> min:256.91
+	> max:263.96
+	> last:262.45
+}
+<===[[ FID Original ]]===> {
+T<->S
+	> min:99.28
+	> max:106.22
+	> last:106.22
+S<->R
+	> min:106.20
+	> max:113.39
+	> last:113.39
+T<->R
+	> min:117.79
+	> max:119.23
+	> last:117.79
+}
