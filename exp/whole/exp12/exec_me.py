@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import libnn.transform
 import utils.path
 from utils import *
+from exp.whole.common_config import CommonConfig
 from libnn.model import weights_init, wgans, wgans_kd
 from libnn.model.wgans import gradient_penalty
 from dataset.fMRI_HC import fMRI_HC_Dataset
@@ -20,7 +21,7 @@ from utils.logger import LoggerGroup, Reporter
 # CONFIG section
 ngpu = 1
 
-dev = "cuda:1"
+dev = get_freer_gpu()
 EPOCHS = 6000
 load_at_epoch = 0
 LR = 1e-4
@@ -38,7 +39,7 @@ preview_gen_num = 20
 export_gen_img_every = 20
 
 # The frequency that FID score being calculated...
-FID_CALC_FREQ = 1
+FID_CALC_FREQ = CommonConfig.FID_CALC_FREQ
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
@@ -83,6 +84,7 @@ criterion = nn.CrossEntropyLoss()
 
 # FID metrics declaration
 fid = libnn.metrics.fid.FID()
+fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
 
 
 def j1_loss(l1, l2, f1, f2):
@@ -110,7 +112,7 @@ netD = wgans.Discriminator(ngpu=1, num_classes=num_classes, latent_size=200, img
 #netG = wgans.Generator(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
 netG = wgans_kd.Generator3Layers(ngpu=1, num_classes=num_classes, z_dim=z_dim, latent_size=200, img_channel=1).to(dev)
 
-if (dev == 'cuda') and (ngpu > 1):
+if ('cuda' in dev) and (ngpu > 1):
     netD = nn.DataParallel(netD, list(range(ngpu)))
     netG = nn.DataParallel(netG, list(range(ngpu)))
 
@@ -131,8 +133,9 @@ g_optim = torch.optim.Adam(netG.parameters(), lr=LR, betas=(0.0, 0.9))
 loss_logger = LoggerGroup("Loss")
 acc_logger = LoggerGroup("Accuracy")
 wgan_logger = LoggerGroup("WGANs")
+fid_logger = LoggerGroup("FID")
 
-reporter = Reporter(loss_logger, acc_logger, wgan_logger)
+reporter = Reporter(loss_logger, acc_logger, wgan_logger, fid_logger)
 
 reporter.set_experiment_name("Whole framework -> to see how well Generator3Layers performed")
 reporter.append_summary_description("This experiment will use ->")
@@ -236,18 +239,38 @@ try:
 
                     real_feature, _ = fid_extr(img_val)
                     gen_feature, _ = fid_extr(fake_img)
-                    fid_val = fid(real_feature, gen_feature)
-                    wgan_logger.collect_step('FID', fid_val.item())
+
+                    fid_val = fid(real_feature, gen_feature).item()
+                    fid_logger.collect_epch('AlexFID', fid_val)
+
+                    fid_orig_val = fid_orig(real_batch=img_val, gen_batch=fake_img).item()
+                    if type(fid_orig_val) is complex:
+                        reporter.log(text="Complex type was found in FID. This value will not be collected", tag="W!")
+                    else:
+                        fid_logger.collect_epch('FID', fid_orig_val)
 
                     # After FID calculation is done, let's make a decision to export model or not.
-                    if wgan_logger.get_value(mode='min', key='FID') == fid_val.item():
-                        reporter.log("Min FID detected: %.2f" % fid_val.item())
+                    if fid_logger.get_value(mode='min', key='FID') == fid_orig_val:
+                        reporter.log("Min FID detected @ epoch=%d: %.2f" % (e, fid_orig_val))
                         reporter.log("\tExporting Discriminator -> netD_t_exp12.pth")
                         save_model(netD, path=MODEL_PATH, filename="netD_t_exp12.pth")
                         reporter.log("\tExporting Discriminator -> netG3Layers_t_exp12.pth")
                         save_model(netG, path=MODEL_PATH, filename="netG3Layers_t_exp12.pth")
                         reporter.log("\tExporting Discriminator -> non_img_extr_t_exp12.pth")
                         save_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr_t_exp12.pth")
+
+                        # Let's see how well the image generation
+                        reporter.log("A preview of generated image has been exported: {}".format(
+                            CommonConfig.EXPRT_GEN_IMG_NAME).format(e))
+                        zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
+                        fy_p_exp = fy_p[0:preview_gen_num, :]
+                        ly_p_idx_exp = ly_p_idx[0:preview_gen_num]
+                        _, _, _, _, fake_img = netG(zz, ly_p_idx_exp, fy_p_exp)
+
+                        real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
+                        fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
+                        img_grid = torch.cat((real_img, fake_img), 1)
+                        save_image(img_grid, IMAGE_PATH + CommonConfig.EXPRT_GEN_IMG_NAME.format(e), normalize=False)
 
                 # Export some generated image to... let author see generator's performance.
                 # Only export image when end of 'export_gen_img_every'th epoch

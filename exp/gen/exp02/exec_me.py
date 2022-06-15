@@ -66,7 +66,7 @@ ds = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf).to(dev)
 ds_val = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf, train=False).to(dev)
 
 ld = DataLoader(ds, batch_size=BS, shuffle=True)
-ld_val = DataLoader(ds_val, batch_size=len(ds_val), shuffle=True)
+ld_val = DataLoader(ds_val, batch_size=len(ds_val), shuffle=False)
 
 # ----Model declaration----
 # - Classifier|Extractor section
@@ -76,15 +76,15 @@ img_extr = AlexNetExtractor(output_class_num=6, in_channel=1, feature_size=200, 
 load_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr.pth")
 load_model(img_extr, path=WEIG_COL_PATH, filename="alexFID.pth")
 
-non_img_extr.to(dev).eval()
-img_extr.to(dev).eval()
+non_img_extr.to(dev)
+img_extr.to(dev)
 
 # nimg_optim = torch.optim.Adam(non_img_extr.parameters(), lr=LR)
 # img_optim = torch.optim.Adam(img_extr.parameters(), lr=LR)
 
 # Metrics function declaration
 fid = FID()
-fid_orig = FIDOrig()
+fid_orig = FIDOrig().to(dev)
 
 # Loss function declaration
 criterion = nn.CrossEntropyLoss()
@@ -235,8 +235,29 @@ try:
                     # Decided to save model or not
                     if best['FIDIncep'] is None or best['FIDIncep'] > fid_score:
                         best['FIDIncep'] = fid_score
-                        reporter.log("Best FID detected: %.4f -> Exporting Generator" % fid_score)
+
+                        reporter.log("@Epoch=%d Best FID detected: %.4f" % (e, fid_score))
+
+                        reporter.log("  > Exporting Generator: netG_DeptSep.pth")
                         save_model(netG, MODEL_PATH, "netG_DeptSep.pth")
+
+                        reporter.log("  > Exporting Discriminator: netD_DeptSep.pth")
+                        save_model(netD, MODEL_PATH, "netD_DeptSep.pth")
+
+                        reporter.log("  > Exporting Non-image FE: non_img_extr_DeptSep.pth")
+                        save_model(non_img_extr, MODEL_PATH, "non_img_extr_DeptSep.pth")
+
+                        # Let's see how well the image generation
+                        reporter.log("A preview of generated image has been exported: best_fid_epoch_{}.png".format(e))
+                        zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
+                        fy_p_exp = fy_p[0:preview_gen_num, :]
+                        ly_p_idx_exp = ly_p_idx[0:preview_gen_num]
+                        p_stem, l_01, l_03, l_05, fake_img = netG(zz, ly_p_idx_exp, fy_p_exp)
+
+                        real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
+                        fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
+                        img_grid = torch.cat((real_img, fake_img), 1)
+                        save_image(img_grid, IMAGE_PATH + "best_fid_epoch_{}.png".format(e), normalize=False)
 
             reporter.report(epch=e + 1, b_i=i, b_all=len(ld) - 1)
 

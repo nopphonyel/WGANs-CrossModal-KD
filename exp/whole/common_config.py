@@ -32,5 +32,10 @@ class CommonConfig:
 
     # Define the frequency of generated image export preview
     EXPRT_GEN_IMG_FREQ = 20
+    # Define the pattern of generation preview image's filename
+    EXPRT_GEN_IMG_NAME = "best_fid_epch_{}.png"
     # Define number of generated image to preview the generation
     PREV_GEN_NUM = 10
+
+    # The frequency that FID score being calculated...
+    FID_CALC_FREQ = 5

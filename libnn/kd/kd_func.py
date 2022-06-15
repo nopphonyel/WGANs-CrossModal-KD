@@ -25,10 +25,10 @@ class SoftTarget(nn.Module):
 
 
 class Logits(nn.Module):
-    '''
+    """
     Do Deep Nets Really Need to be Deep?
     http://papers.nips.cc/paper/5484-do-deep-nets-really-need-to-be-deep.pdf
-    '''
+    """
 
     def __init__(self):
         super(Logits, self).__init__()
@@ -39,11 +39,11 @@ class Logits(nn.Module):
 
 
 class AT(nn.Module):
-    '''
+    """
     Paying More Attention to Attention: Improving the Performance of Convolutional
     Neural Netkworks wia Attention Transfer
     https://arxiv.org/pdf/1612.03928.pdf
-    '''
+    """
 
     def __init__(self, p):
         super(AT, self).__init__()
@@ -56,13 +56,13 @@ class AT(nn.Module):
     def attention_map(self, fm, eps=1e-6):
         am = torch.pow(torch.abs(fm), self.p)
         am = torch.sum(am, dim=1, keepdim=True)
-        norm = torch.norm(am, dim=(2, 3), keepdim=True)
+        norm = torch.norm(am, dim=[2, 3], keepdim=True)
         am = torch.div(am, norm + eps)
         return am
 
 
 class AFD(nn.Module):
-    '''
+    """
     In the original paper, AFD is one of components of AFDS.
     AFDS: Attention Feature Distillation and Selection
     AFD:  Attention Feature Distillation
@@ -72,7 +72,7 @@ class AFD(nn.Module):
 
     Pay Attention to Features, Transfer Learn Faster CNNs
     https://openreview.net/pdf?id=ryxyCeHtPB
-    '''
+    """
 
     def __init__(self, in_channels, att_f):
         super(AFD, self).__init__()
@@ -114,7 +114,7 @@ class AFD(nn.Module):
 
 
 class CRD(nn.Module):
-    '''
+    """
     Both CRD and it's component are modified from
     -> https://github.com/HobbitLong/RepDistiller/tree/master/crd
 
@@ -133,7 +133,7 @@ class CRD(nn.Module):
         nce_t: the temperature
         nce_mom: the momentum for updating the memory buffer
         n_data: the number of samples in the training set, which is the M in Eq.(19)
-    '''
+    """
 
     def __init__(self, s_dim, t_dim, feat_dim, nce_n, nce_t, nce_mom, n_data):
         super(CRD, self).__init__()

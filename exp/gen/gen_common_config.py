@@ -38,3 +38,6 @@ class GenCommonConfig:
     # Since FID calculation require a massive resource and computation time, it is better
     # to set a frequency of calculation instead of perform in every epoch.
     FID_CALC_FREQ = 5
+
+    # A preview image of the best FID image generation name
+    IMG_PREV_EXP_FNAME = "best_fid_epch_{}.png"

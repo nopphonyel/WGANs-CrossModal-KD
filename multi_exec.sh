@@ -1,6 +1,6 @@
 # List of mode and experiment to run in parallel
-mode=("kd/gen_kd" "kd/gen_kd" "kd/gen_kd")
-exp=("exp01_2_1" "exp01_2_2" "exp01_2_3")
+mode=("whole" "whole" "whole")
+exp=("exp10" "exp11" "exp12")
 
 # This will loop through all the arrays of mode and exp. Each iteration will create a screen session for each
 # experiment session.
