@@ -4,7 +4,7 @@ import torch
 import torchvision
 import torch.nn as nn
 
-from utils import load_model, save_model, mkdir, path
+from utils import load_model, save_model, mkdir, path, get_freer_gpu
 from utils.logger import LoggerGroup, Reporter
 
 from dataset.fMRI_HC import fMRI_HC_Dataset, DataLoader
@@ -20,10 +20,10 @@ from exp.kd.kd_common_config import KDCommonConfig
 
 # Define some config
 nGPU = KDCommonConfig.nGPU
-DEV = "cuda"
+DEV = get_freer_gpu()
 
 # Training config
-EPOCHS = KDCommonConfig.EPOCHS
+EPOCHS = 6000
 BS = KDCommonConfig.BS
 LR = KDCommonConfig.LR
 BETAS = KDCommonConfig.BETAS_G
@@ -116,8 +116,10 @@ total_kd_lg = LoggerGroup(title="Total KD Losses")
 kd_loss_lg = LoggerGroup(title="KD Losses")
 fid_lg = LoggerGroup(title="FID AlexNet")
 reporter = Reporter(kd_loss_lg, d_t_loss, total_kd_lg, fid_lg, log_buffer_size=15)
-reporter.set_experiment_name("KD on 3LayersGenerator - Logit+AT_func")
-reporter.set_summary_description("This experiment aim to be an example of KD on generator")
+reporter.set_experiment_name("KD on 3LayersGenerator - AT+Discrim Loss")
+reporter.set_summary_description("This apply AT loss on 3 feature layers. Further experiment like reduce number of ")
+reporter.append_summary_description("\nlayers being use in AT loss should be conduct.")
+reporter.append_summary_description("\n\t > Train on dev: %s" % DEV)
 
 if not reporter.review():
     quit()
@@ -142,14 +144,14 @@ try:
             ld_fake = netD_t(fake_img_s, ly_p_idx, fy_p).view(-1)
 
             g_loss = -torch.mean(ld_fake)
-            kd_loss_logits_val = kd_loss_logits(fake_img_t, fake_img_s)
+            # kd_loss_logits_val = kd_loss_logits(fake_img_t, fake_img_s)
             kd_loss_at_val = [
                 kd_loss_at(l_01_s, l_01_t),
                 kd_loss_at(l_03_t, l_03_s),
                 kd_loss_at(l_05_t, l_05_s)
             ]
 
-            kd_loss_total_val = kd_loss_logits_val + g_loss + (sum(kd_loss_at_val) / 3.0) * LAMBDA_KD
+            kd_loss_total_val = g_loss + (sum(kd_loss_at_val) / len(kd_loss_at_val)) * LAMBDA_KD
 
             # Test back prop again... in hope that discriminator also improve the non-img
             g_s_optim.zero_grad()
@@ -157,7 +159,7 @@ try:
             kd_loss_total_val.backward(retain_graph=True)
             g_s_optim.step()
             # nimg_optim.step()
-            kd_loss_lg.collect_step('logits', kd_loss_logits_val.item())
+            # kd_loss_lg.collect_step('logits', kd_loss_logits_val.item())
             kd_loss_lg.collect_step('at_l1', kd_loss_at_val[0].item())
             kd_loss_lg.collect_step('at_l2', kd_loss_at_val[1].item())
             kd_loss_lg.collect_step('at_l3', kd_loss_at_val[2].item())
@@ -199,4 +201,4 @@ try:
 
 finally:
     reporter.stop()
-    reporter.write_summary(os.path.dirname(__file__), f_name="kd_at_logit_summary.txt")
+    reporter.write_summary(os.path.dirname(__file__), f_name="kd_at_summary.txt")

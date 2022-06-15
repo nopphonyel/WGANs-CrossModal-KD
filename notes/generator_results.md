@@ -9,8 +9,8 @@ Note หน้านี้จะบันทึกเกี่ยวกับ Pe
 | exp_code      | Arch Name                | Model size (MB) | min FID* | Notes |
 |:--------------|--------------------------|-----------------|----------|-------|
 | `whole.exp10` | Generator-DCGANs         | 17.570137       | 259.28   |       |
-| `whole.exp11` | Generator-DeptSep-DCGANs | 1.139289        |          |       |
-| `whole.exp12` | 3Layers-Generator        | 0.763225        |          |       |
+| `whole.exp11` | Generator-DeptSep-DCGANs | 1.139289        | 340.59   |       |
+| `whole.exp12` | 3Layers-Generator        | 0.763225        | 570.53   |       |
 
 
 ### แบบ Train เฉพาะ Generator

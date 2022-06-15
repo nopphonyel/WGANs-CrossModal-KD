@@ -1,11 +1,17 @@
-KD on Generator - Logit+AT_func
-------------------------------------
+KD on 3LayersGenerator - Logit+AT_func
+-------------------------------------------
 This experiment aim to be an example of KD on generator
 
 Here are experiment results.
 <===[[ KD Losses ]]===> {
 }
+<===[[ Gen loss by Discrim ]]===> {
+}
 <===[[ Total KD Losses ]]===> {
 }
 <===[[ FID AlexNet ]]===> {
+S<->Real
+	> min:1507.04
+	> max:6155.86
+	> last:3178.23
 }

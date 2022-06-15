@@ -121,3 +121,13 @@ def load_model(model: nn.Module, path, filename):
 def model_size_mb(nn_model: nn.Module):
     s = sum(np.prod(v.size()) for name, v in nn_model.named_parameters()) / 1e6
     return s.item()
+
+
+def add_proxy():
+    os.environ['http_proxy'] = 'http://192.41.170.23:3128'
+    os.environ['https_proxy'] = 'http://192.41.170.23:3128'
+
+
+def remove_proxy():
+    os.environ.pop('http_proxy')
+    os.environ.pop('https_proxy')

@@ -1,0 +1,19 @@
+KD on 3LayersGenerator - AT+Discrim Loss
+---------------------------------------------
+This apply AT loss on 3 feature layers. Further experiment like reduce number of 
+layers being use in AT loss should be conduct. 
+	 > Train on dev: cuda:0 
+
+Here are experiment results.
+<===[[ KD Losses ]]===> {
+}
+<===[[ Gen loss by Discrim ]]===> {
+}
+<===[[ Total KD Losses ]]===> {
+}
+<===[[ FID AlexNet ]]===> {
+S<->Real
+	> min:1650.81
+	> max:6628.03
+	> last:3497.62
+}

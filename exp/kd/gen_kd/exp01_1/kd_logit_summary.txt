@@ -1,0 +1,18 @@
+KD on 3LayersGenerator - Logits+Discrim Loss
+-------------------------------------------------
+On kd.gen_kd.exp01 doesn't seems well. The cause might be a too many loss constraint
+	 > Train on dev: cuda:1 
+
+Here are experiment results.
+<===[[ KD Losses ]]===> {
+}
+<===[[ Gen loss by Discrim ]]===> {
+}
+<===[[ Total KD Losses ]]===> {
+}
+<===[[ FID AlexNet ]]===> {
+S<->Real
+	> min:1921.13
+	> max:6403.74
+	> last:3432.12
+}

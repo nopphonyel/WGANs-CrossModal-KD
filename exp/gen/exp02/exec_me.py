@@ -18,12 +18,12 @@ import matplotlib.pyplot as plt
 from utils.logger import LoggerGroup, Reporter
 
 from exp.gen.gen_common_config import GenCommonConfig
-from libnn.metrics.fid import FID
+from libnn.metrics.fid import FID, FIDOrig
 
 # CONFIG section
 ngpu = 1
 
-dev = "cuda"
+dev = get_freer_gpu()
 EPOCHS = 6000
 load_at_epoch = 0
 LR = 1e-4
@@ -41,7 +41,6 @@ preview_gen_num = 10
 export_gen_img_every = 20
 
 FID_CALC_FREQ = GenCommonConfig.FID_CALC_FREQ
-
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
@@ -85,6 +84,7 @@ img_extr.to(dev).eval()
 
 # Metrics function declaration
 fid = FID()
+fid_orig = FIDOrig()
 
 # Loss function declaration
 criterion = nn.CrossEntropyLoss()
@@ -140,6 +140,7 @@ reporter = Reporter(wgan_logger, fid_logger, log_buffer_size=15)
 
 reporter.set_experiment_name("Generator DepSeptDC-GANs")
 reporter.append_summary_description("Mainly experiment on Generator: based on DC-GANs using Depth-wise Separable conv")
+reporter.append_summary_description("\nTraining on: %s" % dev)
 reporter.append_summary_description("\nfMRI extractor: 4 layers SimpleFC")
 reporter.append_summary_description("\nImage extractor: AlexNet")
 reporter.append_summary_description("\nfMRI size = %f MB" % model_size_mb(non_img_extr))
@@ -227,11 +228,13 @@ try:
                     real_lat, _ = img_extr(img_val)
 
                     fid_score = fid(real_lat, gen_lat)
-                    fid_logger.collect_step('FID', fid_score)
+                    fid_orig_score = fid_orig(real_batch=img_val, gen_batch=fake_img)
+                    fid_logger.collect_step('AlexFID', fid_score)
+                    fid_logger.collect_step('FIDIncep', fid_orig_score)
 
                     # Decided to save model or not
-                    if best['fid'] is None or best['fid'] > fid_score:
-                        best['fid'] = fid_score
+                    if best['FIDIncep'] is None or best['FIDIncep'] > fid_score:
+                        best['FIDIncep'] = fid_score
                         reporter.log("Best FID detected: %.4f -> Exporting Generator" % fid_score)
                         save_model(netG, MODEL_PATH, "netG_DeptSep.pth")
 

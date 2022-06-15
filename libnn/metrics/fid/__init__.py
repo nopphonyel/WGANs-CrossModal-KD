@@ -5,17 +5,25 @@ from torch import nn
 from scipy import linalg
 from torch.nn.functional import adaptive_avg_pool2d
 
-from libnn.metrics.fid.inception import fid_inception_v3
+import libnn
+
+from libnn.metrics.fid.inception import fid_inception_v3, InceptionV3
+from utils import add_proxy, remove_proxy
 
 
 class FIDOrig(nn.Module):
-    def __init__(self, custom_fe: nn.Module = None):
+    def __init__(self, dim_size=2048):
         super(FIDOrig, self).__init__()
-        if custom_fe is None:
-            self.fe = fid_inception_v3().eval()
-        else:
-            self.fe = custom_fe.eval()
+
+        add_proxy()
+        block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[dim_size]
+        remove_proxy()
+
+        self.fe = InceptionV3([block_idx], use_fid_inception=True)
         self.eps = 1e-6
+        self.rgb_tf = nn.Sequential(
+            libnn.transform.GreyScaleToRGB()
+        )
 
     def to(self, new_dev):
         self.fe.to(new_dev)
@@ -30,7 +38,7 @@ class FIDOrig(nn.Module):
         #     pred = adaptive_avg_pool2d(pred, output_size=(1, 1))
         #
         # pred = pred.squeeze(3).squeeze(2).cpu().numpy()
-        pred = pred.cpu().numpy()
+        pred = pred[0].squeeze(3).squeeze(2).cpu().numpy()
 
         mu = np.mean(pred, axis=0)
         sigma = np.cov(pred, rowvar=False)
@@ -38,6 +46,9 @@ class FIDOrig(nn.Module):
         return mu, sigma
 
     def __call__(self, real_batch, gen_batch):
+
+        real_batch = self.rgb_tf(real_batch)
+        gen_batch = self.rgb_tf(gen_batch)
 
         mu1, sigma1 = self.__get_act_stat(real_batch)
         mu2, sigma2 = self.__get_act_stat(gen_batch)
@@ -135,11 +146,11 @@ if __name__ == "__main__":
     dev = "cuda"
 
     # fid = FIDOrig().to(dev)
-    fid = FID()
+    fid = FIDOrig().to(dev)
     img_tf = nn.Sequential(
         torchvision.transforms.Resize((64, 64)),
         # libnn.transform.GreyScaleToRGB(),
-        libnn.transform.TanhRescale(min_in_val=0, max_in_val=255, margin_val=0.01)
+        libnn.transform.TanhRescale(min_in_val=0, max_in_val=255, margin_val=0.01),
     )
     ds = fMRI_HC_Dataset(p_id=1, v=1, img_tf=img_tf).to(dev)
     ld = DataLoader(ds, batch_size=4)

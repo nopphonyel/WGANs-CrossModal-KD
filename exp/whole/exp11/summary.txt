@@ -8,8 +8,44 @@ Generator size = 1.139289 MB
 
 Here are experiment results.
 <===[[ Loss ]]===> {
+total
+	> min:-74.51
+	> max:-0.00
+	> last:-72.63
+j1
+	> min:-74.51
+	> max:-3.79
+	> last:-72.63
+j2
+	> min:0.00
+	> max:2.43
+	> last:0.00
+j3
+	> min:0.00
+	> max:1.99
+	> last:0.00
 }
 <===[[ Accuracy ]]===> {
+j2_acc
+	> min:16.20
+	> max:55.02
+	> last:47.22
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:98.61
 }
 <===[[ WGANs ]]===> {
+d_loss
+	> min:-131.62
+	> max:-29.90
+	> last:-31.36
+g_loss
+	> min:60.82
+	> max:332.85
+	> last:330.41
+FID
+	> min:340.59
+	> max:10200.63
+	> last:669.96
 }

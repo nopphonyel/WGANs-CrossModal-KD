@@ -4,13 +4,13 @@ import torch
 import torchvision
 import torch.nn as nn
 
-from utils import load_model, save_model, mkdir, path
+from utils import load_model, save_model, mkdir, path, get_freer_gpu
 from utils.logger import LoggerGroup, Reporter
 
 from dataset.fMRI_HC import fMRI_HC_Dataset, DataLoader
 
 from libnn.kd import kd_func
-from libnn.metrics.fid import FID
+from libnn.metrics.fid import FID, FIDOrig
 from libnn.model.fe.alexextractor import AlexNetExtractor
 from libnn.model.fe.simplcfcextractor import SimpleFCExtractor
 from libnn.model.wgans_kd.teachers import GeneratorKD, Discriminator
@@ -20,10 +20,10 @@ from exp.kd.kd_common_config import KDCommonConfig
 
 # Define some config
 nGPU = KDCommonConfig.nGPU
-DEV = "cuda"
+DEV = get_freer_gpu()
 
 # Training config
-EPOCHS = KDCommonConfig.EPOCHS
+EPOCHS = 6000
 BS = KDCommonConfig.BS
 LR = KDCommonConfig.LR
 BETAS = KDCommonConfig.BETAS_G
@@ -110,14 +110,17 @@ kd_loss_at = kd_func.AT(p=AT_P)
 
 # Define eval metrics
 fid = FID()
+fid_orig = FIDOrig().to(DEV)
 
 d_t_loss = LoggerGroup(title="Gen loss by Discrim")
 total_kd_lg = LoggerGroup(title="Total KD Losses")
 kd_loss_lg = LoggerGroup(title="KD Losses")
 fid_lg = LoggerGroup(title="FID AlexNet")
-reporter = Reporter(kd_loss_lg, d_t_loss, total_kd_lg, fid_lg, log_buffer_size=15)
-reporter.set_experiment_name("KD on 3LayersGenerator - Logit+AT_func")
-reporter.set_summary_description("This experiment aim to be an example of KD on generator")
+fid_orig_lg = LoggerGroup(title="FID Original")
+reporter = Reporter(kd_loss_lg, d_t_loss, total_kd_lg, fid_lg, fid_orig_lg, log_buffer_size=15)
+reporter.set_experiment_name("KD on 3LayersGenerator - 1stAT+Discrim Loss")
+reporter.set_summary_description("Using the first feature layer for calculating AT_KD loss")
+reporter.append_summary_description("\n\t > Train on dev: %s" % DEV)
 
 if not reporter.review():
     quit()
@@ -142,14 +145,14 @@ try:
             ld_fake = netD_t(fake_img_s, ly_p_idx, fy_p).view(-1)
 
             g_loss = -torch.mean(ld_fake)
-            kd_loss_logits_val = kd_loss_logits(fake_img_t, fake_img_s)
+            # kd_loss_logits_val = kd_loss_logits(fake_img_t, fake_img_s)
             kd_loss_at_val = [
                 kd_loss_at(l_01_s, l_01_t),
-                kd_loss_at(l_03_t, l_03_s),
-                kd_loss_at(l_05_t, l_05_s)
+                # kd_loss_at(l_03_t, l_03_s),
+                # kd_loss_at(l_05_t, l_05_s)
             ]
 
-            kd_loss_total_val = kd_loss_logits_val + g_loss + (sum(kd_loss_at_val) / 3.0) * LAMBDA_KD
+            kd_loss_total_val = g_loss + (sum(kd_loss_at_val) / len(kd_loss_at_val)) * LAMBDA_KD
 
             # Test back prop again... in hope that discriminator also improve the non-img
             g_s_optim.zero_grad()
@@ -157,10 +160,10 @@ try:
             kd_loss_total_val.backward(retain_graph=True)
             g_s_optim.step()
             # nimg_optim.step()
-            kd_loss_lg.collect_step('logits', kd_loss_logits_val.item())
+            # kd_loss_lg.collect_step('logits', kd_loss_logits_val.item())
             kd_loss_lg.collect_step('at_l1', kd_loss_at_val[0].item())
-            kd_loss_lg.collect_step('at_l2', kd_loss_at_val[1].item())
-            kd_loss_lg.collect_step('at_l3', kd_loss_at_val[2].item())
+            # kd_loss_lg.collect_step('at_l2', kd_loss_at_val[1].item())
+            # kd_loss_lg.collect_step('at_l3', kd_loss_at_val[2].item())
             d_t_loss.collect_step('->', g_loss.item())
             total_kd_lg.collect_step('->', kd_loss_total_val.item())
 
@@ -183,20 +186,32 @@ try:
             student_feature, _ = fid_extr(fake_img_s)
 
             fid_value = fid(teacher_feature, student_feature)
+            fid_orig_value = fid_orig(real_batch=fake_img_t, gen_batch=fake_img_s)
             fid_lg.collect_step('T<->S', fid_value.item())
+            fid_orig_lg.collect_step('T<->S', fid_orig_value.item())
 
             fid_value = fid(real_feature, student_feature)
-            fid_lg.collect_step('S<->Real', fid_value.item())
+            fid_orig_value = fid_orig(real_batch=img_val, gen_batch=fake_img_s)
+            fid_lg.collect_step('S<->R', fid_value.item())
+            fid_orig_lg.collect_step('S<->R', fid_orig_value.item())
 
             fid_value = fid(real_feature, teacher_feature)
-            fid_lg.collect_step('T<->Real', fid_value.item())
+            fid_orig_value = fid_orig(real_batch=img_val, gen_batch=fake_img_t)
+            fid_lg.collect_step('T<->R', fid_value.item())
+            fid_orig_lg.collect_step('T<->R', fid_orig_value.item())
 
-            if fid_lg.get_value('last', 'S<->Real') <= fid_lg.get_value('min', 'S<->Real'):
+            if fid_lg.get_value('last', 'S<->R') <= fid_lg.get_value('min', 'S<->R'):
                 reporter.log("Best generator has been found... Exporting model netG_s.pth")
-                reporter.log("  > Info [EPCH=%d] [FID(S<->Real)=%.4f]" % (e, fid_lg.get_value('last', 'S<->Real')))
+                reporter.log("  > Info [EPCH=%d] [FID(S<->R)=%.4f]" % (e, fid_lg.get_value('last', 'S<->R')))
                 save_model(netG_s, path=MODEL_PATH, filename="netG_s.pth")
+
+        d_t_loss.flush_step_all()
+        total_kd_lg.flush_step_all()
+        fid_lg.flush_step_all()
+        fid_orig_lg.flush_step_all()
+        kd_loss_lg.flush_step_all()
 
 
 finally:
     reporter.stop()
-    reporter.write_summary(os.path.dirname(__file__), f_name="kd_at_logit_summary.txt")
+    reporter.write_summary(os.path.dirname(__file__), f_name="kd_at_summary.txt")

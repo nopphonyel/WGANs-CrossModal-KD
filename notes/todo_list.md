@@ -2,11 +2,19 @@
 
 On each day
 
-## 2022-06-04
-
+## Pending...
+Not that hurry task.
 - [ ] อ่าน paper GCN อีกรอบนึง
 - [ ] อ่าน
   paper [Compressing GANs using Knowledge Distillation](https://arxiv.org/pdf/1902.00159.pdf?ref=https://githubhelp.com)
+
+
+## 2022-06-15
+- [ ] Retrain GANs ทุกโมเดล แล้วใช้ FID Original ในการหาอันที่ดีที่สุดแทน
+- [ ] Retrain KD เช่นกัน
+
+## 2022-06-04
+
 - [x] ทำ script gen_kd ที่รวม teacher discriminator เข้าไปด้วย
     - อาจจะมีคำถามว่า ต้องจัด framework ยังไงบ้าง
         1. รวม Discriminator

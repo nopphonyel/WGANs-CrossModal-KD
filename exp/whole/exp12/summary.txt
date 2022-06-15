@@ -1,0 +1,51 @@
+Whole framework -> to see how well Generator3Layers performed
+------------------------------------------------------------------
+This experiment will use -> 
+	> FE: SimpleFC 4 layers. 
+	> GEN: My custom architecture with ridiculously large size of kernel. 
+fMRI size = 1.184590 MB 
+Generator size = 0.763225 MB 
+
+Here are experiment results.
+<===[[ Loss ]]===> {
+total
+	> min:-73.07
+	> max:-0.09
+	> last:-72.12
+j1
+	> min:-73.07
+	> max:-3.85
+	> last:-72.12
+j2
+	> min:0.00
+	> max:2.34
+	> last:0.00
+j3
+	> min:0.00
+	> max:2.13
+	> last:0.00
+}
+<===[[ Accuracy ]]===> {
+j2_acc
+	> min:15.51
+	> max:58.33
+	> last:48.61
+j3_acc
+	> min:16.67
+	> max:100.00
+	> last:98.61
+}
+<===[[ WGANs ]]===> {
+d_loss
+	> min:-131.77
+	> max:-32.36
+	> last:-34.71
+g_loss
+	> min:61.12
+	> max:317.53
+	> last:315.88
+FID
+	> min:570.53
+	> max:10155.98
+	> last:602.56
+}

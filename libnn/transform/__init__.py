@@ -29,4 +29,9 @@ class GreyScaleToRGB(nn.Module):
         super(GreyScaleToRGB, self).__init__()
 
     def forward(self, x):
-        return x.repeat(3, 1, 1)
+        if x.shape[-3] == 1:
+            target_shape = [1]*len(x.shape)
+            target_shape[-3] = 3
+            return x.repeat(target_shape)
+        else:
+            return x
