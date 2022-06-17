@@ -39,7 +39,7 @@ preview_gen_num = 20
 export_gen_img_every = 20
 
 # The frequency that FID score being calculated...
-FID_CALC_FREQ = CommonConfig.FID_CALC_FREQ
+MET_CALC_FREQ = CommonConfig.MET_CALC_FREQ
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
@@ -85,6 +85,8 @@ criterion = nn.CrossEntropyLoss()
 # FID metrics declaration
 fid = libnn.metrics.fid.FID()
 fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
+pixel_wise = libnn.metrics.pixelwise.PixelWise()
+mpixel_wise = libnn.metrics.pixelwise.MaskedPixelWise()
 
 
 def j1_loss(l1, l2, f1, f2):
@@ -132,9 +134,9 @@ g_optim = torch.optim.Adam(netG.parameters(), lr=LR, betas=(0.0, 0.9))
 loss_logger = LoggerGroup("Loss")
 acc_logger = LoggerGroup("Accuracy")
 wgan_logger = LoggerGroup("WGANs")
-fid_logger = LoggerGroup("FID")
+metrics_logger = LoggerGroup("GANs Metrics")
 
-reporter = Reporter(loss_logger, acc_logger, wgan_logger, fid_logger)
+reporter = Reporter(loss_logger, acc_logger, wgan_logger, metrics_logger)
 
 reporter.set_experiment_name("Whole framework -> to see how well GeneratorDeptSep performed")
 reporter.append_summary_description("This experiment will use ->")
@@ -231,7 +233,7 @@ try:
                 # Calculate the FID distance between generated image and real image
                 # Using "my AlexNet" model to extract the feature and do calculation
                 # Therefore, I shall name it -> AlexFID!!!!!
-                if i == 0 and (e + 1) % FID_CALC_FREQ == 0:
+                if i == 0 and (e + 1) % MET_CALC_FREQ == 0:
                     curr_bs = fmri_val.shape[0]
                     zz = torch.randn(curr_bs, z_dim, 1, 1, device=dev)
                     _, _, _, _, _, _, fake_img = netG(zz, ly_p_idx, fy_p)
@@ -240,17 +242,25 @@ try:
                     gen_feature, _ = fid_extr(fake_img)
 
                     fid_val = fid(real_feature, gen_feature).item()
-                    fid_logger.collect_epch('AlexFID', fid_val)
+                    metrics_logger.collect_epch('AlexFID', fid_val)
 
-                    fid_orig_val = fid_orig(real_batch=img_val, gen_batch=fake_img).item()
-                    if type(fid_orig_val) is complex:
-                        reporter.log(text="Complex type was found in FID. This value will not be collected", tag="W!")
-                    else:
-                        fid_logger.collect_epch('FID', fid_orig_val)
+                    # fid_orig_val = fid_orig(real_batch=img_val, gen_batch=fake_img).item()
+                    # if type(fid_orig_val) is complex:
+                    #     reporter.log(text="Complex type was found in FID. This value will not be collected", tag="W!")
+                    # else:
+                    #     metrics_logger.collect_epch('FID', fid_orig_val)
+
+                    pixel_wise_val = pixel_wise(real_batch=img_val, gen_batch=fake_img).item()
+                    metrics_logger.collect_epch('PixelWise', pixel_wise_val)
+
+                    # MaskedPixelWise calculation
+                    mpixel_wise_val = mpixel_wise(real_batch=img_val, real_label=label_idx_val, gen_batch=fake_img,
+                                                  fy_label=ly_p_idx)
+                    metrics_logger.collect_epch('MPixelWise', mpixel_wise_val)
 
                     # After FID calculation is done, let's make a decision to export model or not.
-                    if fid_logger.get_value(mode='min', key='FID') == fid_orig_val:
-                        reporter.log("Min FID detected @ epoch=%d: %.2f" % (e, fid_orig_val))
+                    if metrics_logger.get_value(mode='min', key='MPixelWise') == mpixel_wise_val:
+                        reporter.log("Min Masked-PixelWise detected @ epoch=%d: %.2f" % (e, mpixel_wise_val))
                         reporter.log("  > Exporting Discriminator -> netD_t_exp11.pth")
                         save_model(netD, path=MODEL_PATH, filename="netD_t_exp11.pth")
                         reporter.log("  > Exporting Discriminator -> netGDeptSep_t_exp11.pth")

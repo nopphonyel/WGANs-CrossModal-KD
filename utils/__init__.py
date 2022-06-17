@@ -2,6 +2,7 @@ import os
 import csv
 import random
 import pathlib
+import subprocess
 import numpy as np
 import torch
 import torch.nn as nn
@@ -12,14 +13,10 @@ from itertools import combinations
 
 
 def get_freer_gpu():
-    os.system('nvidia-smi -q -d Memory | grep -A4 GPU | grep Free > gpu_free')
-    memory_available = [int(x.split()[2]) for x in open('gpu_free', 'r').readlines()]
-    gpu = f'cuda:{np.argmax(memory_available)}'
-    # if os.path.exists("gpu_free"):
-    #     os.remove("gpu_free")
-    # else:
-    #       print("The file does not exist")
-    # print(get_freer_gpu())
+    res = subprocess.check_output("nvidia-smi -q -d Memory | grep -A4 GPU | grep Used", shell=True)
+    res = res.decode('utf-8').split('\n')[:-1]
+    memory_available = [int(x.split()[2]) for x in res]
+    gpu = f'cuda:{np.argmin(memory_available)}'
     return gpu
 
 

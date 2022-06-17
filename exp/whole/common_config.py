@@ -37,5 +37,5 @@ class CommonConfig:
     # Define number of generated image to preview the generation
     PREV_GEN_NUM = 10
 
-    # The frequency that FID score being calculated...
-    FID_CALC_FREQ = 5
+    # The frequency that metrics being calculated...
+    MET_CALC_FREQ = 5

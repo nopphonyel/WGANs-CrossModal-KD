@@ -17,7 +17,11 @@ Not that hurry task.
         - ถ้าอย่างนั้นทดลองใช้ DirectFID (คือเอารูปมาคำนวนเลย) แต่ว่า Metrics
           ตัวนี้ยังไม่เป็นที่ยอมรับเพราะเรามั่วขึ้นมาเอง
         - ใช้ PixelWise loss ก็ดูเข้าท่าเหมือนกัน เพราะเราไม่ได้ Generate รูป แต่เราทำ mapping จาก fmri -> stim_image
-          ซึ่งมันมี stim image เป็น target อยู่แล้ว
+          ซึ่งมันมี stim image เป็น target อยู่แล้ว -> ดูเหมือนว่า อันที่ gen มาไม่ตรงคลาส ทำให้ค่า loss สูงขึ้นอย่างมาก
+        - เพื่อแก้ปัญหาไม่ตรง class ก็เลยทำเป็น MaskedPixelWise loss ไปซะแล้ว... ไม่แน่ใจเหมือนกันว่า Criterion
+          นี้จะโอเคมั้ย เพราะเราคิดขึ้นเอง แต่ส่วนตัวมองว่า ถ้า gen ไม่ตรง class มันไม่ใช่ความผิดของ Generator
+          แต่เป็นของ fmri extractor ซึ่งเรา eval ไปด้วย classification acc ไปแล้ว ไม่ควรเอาความผิดพลาดนี้มาซ้ำเติมใส่
+          Generator
 - [ ] Retrain KD เช่นกัน
 
 ## 2022-06-04
