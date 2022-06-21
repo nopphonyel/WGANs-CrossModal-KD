@@ -39,7 +39,10 @@ preview_gen_num = 20
 export_gen_img_every = 20
 
 # The frequency that FID score being calculated...
-MET_CALC_FREQ = CommonConfig.MET_CALC_FREQ
+MET_CALC_FREQ = 2
+
+EXPRT_IMG_GEN_NAME_ALEXFID = 'best_alexfid_epch{}.png'
+EXPRT_IMG_GEN_NAME_MPIXWISE = 'best_mpixwise_epch{}.png'
 
 # Define some path variable
 __dirname__ = os.path.dirname(__file__)
@@ -84,7 +87,7 @@ criterion = nn.CrossEntropyLoss()
 
 # FID metrics declaration
 alex_fid = libnn.metrics.fid.FID()
-fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
+#fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
 pixel_wise = libnn.metrics.pixelwise.PixelWise()
 mpixel_wise = libnn.metrics.pixelwise.MaskedPixelWise()
 
@@ -259,22 +262,22 @@ try:
 
                     # MaskedPixelWise calculation
                     mpixel_wise_val = mpixel_wise(real_batch=img_val, real_label=label_idx_val, gen_batch=fake_img,
-                                                  fy_label=ly_p_idx)
+                                                  fy_label=ly_p_idx).item()
                     metrics_logger.collect_epch('MPixelWise', mpixel_wise_val)
 
                     # After FID calculation is done, let's make a decision to export model or not.
                     if metrics_logger.get_value(mode='min', key='MPixelWise') == mpixel_wise_val:
                         reporter.log("Min Masked-PixelWise detected @ epoch=%d: %.2f" % (e, mpixel_wise_val))
-                        reporter.log("  > Exporting Discriminator -> netD_t.pth")
-                        save_model(netD, path=MODEL_PATH, filename="netD_t.pth")
-                        reporter.log("  > Exporting Discriminator -> netG_t.pth")
-                        save_model(netG, path=MODEL_PATH, filename="netG_t.pth")
-                        reporter.log("  > Exporting Discriminator -> non_img_extr_t.pth")
-                        save_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr_t.pth")
+                        # reporter.log("  > Exporting Discriminator -> netD_t.pth")
+                        # save_model(netD, path=MODEL_PATH, filename="netD_t.pth")
+                        # reporter.log("  > Exporting Discriminator -> netG_t.pth")
+                        # save_model(netG, path=MODEL_PATH, filename="netG_t.pth")
+                        # reporter.log("  > Exporting Discriminator -> non_img_extr_t.pth")
+                        # save_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr_t.pth")
 
                         # Let's see how well the image generation
                         reporter.log("A preview of generated image has been exported: {}".format(
-                            CommonConfig.EXPRT_GEN_IMG_NAME).format(e))
+                            EXPRT_IMG_GEN_NAME_MPIXWISE).format(e))
                         zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
                         fy_p_exp = fy_p[0:preview_gen_num, :]
                         ly_p_idx_exp = ly_p_idx[0:preview_gen_num]
@@ -283,7 +286,30 @@ try:
                         real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
                         fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
                         img_grid = torch.cat((real_img, fake_img), 1)
-                        save_image(img_grid, IMAGE_PATH + CommonConfig.EXPRT_GEN_IMG_NAME.format(e), normalize=False)
+                        save_image(img_grid, IMAGE_PATH + EXPRT_IMG_GEN_NAME_MPIXWISE.format(e), normalize=False)
+
+                    # After FID calculation is done, let's make a decision to export model or not.
+                    if metrics_logger.get_value(mode='min', key='AlexFID') == alex_fid_val:
+                        reporter.log("Min AlexFID detected @ epoch=%d: %.2f" % (e, alex_fid_val))
+                        # reporter.log("  > Exporting Discriminator -> netD_t.pth")
+                        # save_model(netD, path=MODEL_PATH, filename="netD_t.pth")
+                        # reporter.log("  > Exporting Discriminator -> netG_t.pth")
+                        # save_model(netG, path=MODEL_PATH, filename="netG_t.pth")
+                        # reporter.log("  > Exporting Discriminator -> non_img_extr_t.pth")
+                        # save_model(non_img_extr, path=MODEL_PATH, filename="non_img_extr_t.pth")
+
+                        # Let's see how well the image generation
+                        reporter.log("A preview of generated image has been exported: {}".format(
+                            EXPRT_IMG_GEN_NAME_ALEXFID).format(e))
+                        zz = torch.randn(preview_gen_num, z_dim, 1, 1, device=dev)
+                        fy_p_exp = fy_p[0:preview_gen_num, :]
+                        ly_p_idx_exp = ly_p_idx[0:preview_gen_num]
+                        fake_img = netG(zz, ly_p_idx_exp, fy_p_exp)
+
+                        real_img = make_grid(img_val[0:preview_gen_num, :, :, :], nrow=preview_gen_num, normalize=True)
+                        fake_img = make_grid(fake_img, nrow=preview_gen_num, normalize=True)
+                        img_grid = torch.cat((real_img, fake_img), 1)
+                        save_image(img_grid, IMAGE_PATH + EXPRT_IMG_GEN_NAME_ALEXFID.format(e), normalize=False)
 
                 # Export some generated image to... let author see generator's performance.
                 # Only export image when end of 'export_gen_img_every'th epoch

@@ -341,20 +341,21 @@ class Reporter:
             self.stdscr.refresh()
 
     def _update_log(self, curr_lin):
+        rows, cols = self.stdscr.getmaxyx()
         it_lin = curr_lin
         # In case that log buffer is full
         ll_len = len(self.log_list)
         if ll_len > self.log_bs:
             # Clear all log first
             for e_log in self.log_list[:-1]:  # Run loop through all log except last one
-                self.stdscr.addstr(it_lin, 0, len(e_log) * " ")
+                self.stdscr.addstr(it_lin, 0, len(e_log[0:cols - 1]) * " ")
                 it_lin += 1
             self.log_list = self.log_list[ll_len - self.log_bs:]
         # Reset the line position
         it_lin = curr_lin
         # Then re-print it
         for e_log in self.log_list:
-            self.stdscr.addstr(it_lin, 0, e_log)
+            self.stdscr.addstr(it_lin, 0, e_log[0:cols - 1])
             it_lin += 1
 
     def set_experiment_name(self, exp_name):

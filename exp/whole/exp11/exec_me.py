@@ -84,7 +84,7 @@ criterion = nn.CrossEntropyLoss()
 
 # FID metrics declaration
 fid = libnn.metrics.fid.FID()
-fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
+# fid_orig = libnn.metrics.fid.FIDOrig().to(dev)
 pixel_wise = libnn.metrics.pixelwise.PixelWise()
 mpixel_wise = libnn.metrics.pixelwise.MaskedPixelWise()
 
@@ -255,7 +255,7 @@ try:
 
                     # MaskedPixelWise calculation
                     mpixel_wise_val = mpixel_wise(real_batch=img_val, real_label=label_idx_val, gen_batch=fake_img,
-                                                  fy_label=ly_p_idx)
+                                                  fy_label=ly_p_idx).item()
                     metrics_logger.collect_epch('MPixelWise', mpixel_wise_val)
 
                     # After FID calculation is done, let's make a decision to export model or not.

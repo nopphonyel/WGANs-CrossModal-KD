@@ -9,53 +9,53 @@ Generator size = 0.763225 MB
 Here are experiment results.
 <===[[ Loss ]]===> {
 total
-	> min:-63.83
-	> max:0.03
-	> last:-63.83
+	> min:-69.67
+	> max:0.15
+	> last:-68.09
 j1
-	> min:-64.74
-	> max:-3.81
-	> last:-64.33
+	> min:-69.67
+	> max:-3.66
+	> last:-68.09
 j2
-	> min:0.47
-	> max:2.21
-	> last:0.47
+	> min:0.00
+	> max:2.33
+	> last:0.00
 j3
-	> min:0.01
-	> max:2.04
-	> last:0.02
+	> min:0.00
+	> max:2.03
+	> last:0.00
 }
 <===[[ Accuracy ]]===> {
 j2_acc
-	> min:12.35
-	> max:49.85
-	> last:44.60
+	> min:11.11
+	> max:56.56
+	> last:47.22
 j3_acc
-	> min:16.05
-	> max:98.53
-	> last:97.53
+	> min:16.67
+	> max:100.00
+	> last:98.61
 }
 <===[[ WGANs ]]===> {
 d_loss
-	> min:-121.07
-	> max:-45.77
-	> last:-45.77
+	> min:-120.60
+	> max:-32.35
+	> last:-35.15
 g_loss
-	> min:56.15
-	> max:112.79
-	> last:112.79
+	> min:59.10
+	> max:152.09
+	> last:112.29
 }
 <===[[ GANs Metrics ]]===> {
 AlexFID
-	> min:5570.60
-	> max:10164.92
-	> last:5570.60
-FID
-	> min:97.82
-	> max:124.35
-	> last:124.35
+	> min:1234.20
+	> max:10141.91
+	> last:1468.65
 PixelWise
 	> min:0.30
 	> max:0.71
-	> last:0.32
+	> last:0.38
+MPixelWise
+	> min:0.26
+	> max:0.70
+	> last:0.31
 }

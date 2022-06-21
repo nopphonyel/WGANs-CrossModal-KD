@@ -10,6 +10,17 @@ Not that hurry task.
 - [ ] อ่าน
   paper [Compressing GANs using Knowledge Distillation](https://arxiv.org/pdf/1902.00159.pdf?ref=https://githubhelp.com)
 
+## 2022-06-19
+
+- ตอนนี้ลอง train generator ดูแล้วพบว่า
+    - FID with Inception ไม่สามารถเป็น metrics ที่ดีได้เพราะเลขมันไม่บอกอไรเลยเนื่องจาก Inception Net
+      ถูกออกแบบมาเพื่อรูป RGB เท่านั้น GreyScale hand written image มีโอกาสไม่ work สูงมาก
+    - AlexFID ยังไม่ได้ลองตัดสินด้วยตาเปล่า อยากให้ลองตรวจสอบดูหน่อยวันนี้
+        - [ ] train generator โดยเลือก AlexFID ที่ต่ำสุดมาด้วย
+    - PixelWise จะถูกเพิ่มขึ้นเมื่อ generator ได้รับ input class จาก fmri-FE ที่ผิด เลยลองทำ...
+    - MaskedPixelWise พอลองดูแล้วพบว่า Distance ที่น้อยที่สุดคือรูปที่เบลอๆ แต่รูปที่ชัดเจนมันดันไม่ตรงกับ Given Stimuli
+      เลยทำให้ค่า Distance สูงขึ้น... อาจจะไม่ใช่ Metrics ที่ดี แต่ถ้าเราเอา PixelWise loss เข้าไป train generator ด้วยก็ไม่แน่
+
 ## 2022-06-15
 
 - [ ] Retrain GANs ทุกโมเดล แล้วใช้ FID Original ในการหาอันที่ดีที่สุดแทน -> **Training in progress...**

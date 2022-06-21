@@ -21,7 +21,7 @@ class MaskedPixelWise:
             gen_batch: torch.Tensor,
             fy_label: torch.Tensor
     ):
-        m = real_label.clone().detach() == fy_label.clone().detach()
+        m = real_label.detach() == fy_label.detach()
         s = torch.sum(m)
         l = nnf.mse_loss(real_batch, gen_batch, reduction='none')
         loss = torch.mean(l.flatten(1) * m.unsqueeze(1), dim=1)
